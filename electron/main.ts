@@ -9,6 +9,13 @@ Menu.setApplicationMenu(null);
 // Set the app name so macOS menu bar and dock show "Mizan"
 app.setName("Mizan");
 
+// Enforce single instance — second launch focuses the existing window instead
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+  process.exit(0);
+}
+
 let mainWindow: BrowserWindow | null = null;
 
 // Resolve icon: in production resources are next to the app bundle
@@ -49,6 +56,13 @@ function createWindow(port: number) {
     mainWindow = null;
   });
 }
+
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 app.whenReady().then(async () => {
   // Start Ollama in the background — it is non-blocking.
