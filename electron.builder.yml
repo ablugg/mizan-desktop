@@ -23,6 +23,8 @@ files:
 extraResources:
   - from: "build/icon.png"
     to: "icon.png"
+  - from: "resources/seed.db"
+    to: "seed.db"
   - from: "resources/ollama/"
     to: "ollama/"
     filter: "**/*"

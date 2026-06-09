@@ -1,4 +1,3 @@
-import { execFileSync } from "child_process";
 import http from "http";
 import net from "net";
 import path from "path";
@@ -49,38 +48,18 @@ function waitForHttp(port: number, timeoutMs = 60_000): Promise<void> {
   });
 }
 
-function runPrismaMigrate(userData: string, appPath: string): void {
-  const schemaPath = path.join(appPath, "prisma/schema.prisma");
-  if (!fs.existsSync(schemaPath)) return;
+function ensureDatabase(userData: string): void {
+  const dbPath = path.join(userData, "mizan.db");
+  if (fs.existsSync(dbPath)) return;
 
-  try {
-    // Locate prisma CLI relative to the app
-    const prismaBin = path.join(appPath, "node_modules/.bin/prisma");
-    const cli = fs.existsSync(prismaBin) ? prismaBin : "prisma";
-    execFileSync(cli, ["migrate", "deploy", "--schema", schemaPath], {
-      env: {
-        ...process.env,
-        DATABASE_URL: `file:${path.join(userData, "mizan.db")}`,
-      },
-      stdio: "ignore",
-    });
-    console.log("[db] Migrations applied.");
-  } catch {
-    // migrate deploy may fail on first run if no migrations exist — try db push instead
-    try {
-      const prismaBin = path.join(appPath, "node_modules/.bin/prisma");
-      const cli = fs.existsSync(prismaBin) ? prismaBin : "prisma";
-      execFileSync(cli, ["db", "push", "--schema", schemaPath, "--accept-data-loss"], {
-        env: {
-          ...process.env,
-          DATABASE_URL: `file:${path.join(userData, "mizan.db")}`,
-        },
-        stdio: "ignore",
-      });
-      console.log("[db] Schema pushed.");
-    } catch (e) {
-      console.error("[db] Failed to initialise database:", e);
-    }
+  // On first launch copy the bundled seed database (has schema, no user data)
+  const seedPath = path.join(process.resourcesPath, "seed.db");
+  if (fs.existsSync(seedPath)) {
+    fs.mkdirSync(userData, { recursive: true });
+    fs.copyFileSync(seedPath, dbPath);
+    console.log("[db] Database initialised from seed.");
+  } else {
+    console.error("[db] seed.db not found — database will be missing");
   }
 }
 
@@ -90,12 +69,11 @@ export async function startNextServer(): Promise<number> {
   }
 
   const port = await getAvailablePort();
-  const appPath = app.getAppPath();
-  const serverScript = path.join(appPath, ".next/standalone/server.js");
+  const serverScript = path.join(app.getAppPath(), ".next/standalone/server.js");
   const userData = app.getPath("userData");
 
-  // Ensure the database schema exists before starting the server
-  runPrismaMigrate(userData, appPath);
+  // Ensure database exists on first launch
+  ensureDatabase(userData);
 
   serverProcess = utilityProcess.fork(serverScript, [], {
     env: {
