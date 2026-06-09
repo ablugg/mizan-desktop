@@ -16,6 +16,9 @@ files:
   - "prisma/**/*"
   - "node_modules/.prisma/**/*"
   - "node_modules/@prisma/client/**/*"
+  - "node_modules/prisma/**/*"
+  - "node_modules/@prisma/migrate/**/*"
+  - "node_modules/@prisma/engines/**/*"
 
 extraResources:
   - from: "build/icon.png"

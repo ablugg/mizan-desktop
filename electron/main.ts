@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, globalShortcut } from "electron";
 import path from "path";
 import { startNextServer, stopNextServer } from "./server";
 import { OllamaManager } from "./ollama";
@@ -47,6 +47,12 @@ function createWindow(port: number) {
     mainWindow?.show();
   });
 
+  // If the page fails to load, retry after a short delay
+  mainWindow.webContents.on("did-fail-load", (_e, code, desc) => {
+    console.error(`[main] Page load failed (${code}: ${desc}), retrying in 1s…`);
+    setTimeout(() => mainWindow?.loadURL(`http://127.0.0.1:${port}`), 1000);
+  });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
@@ -79,6 +85,11 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow(port);
     }
+  });
+
+  // Cmd+Option+I / Ctrl+Shift+I opens DevTools for debugging
+  globalShortcut.register("CommandOrControl+Alt+I", () => {
+    mainWindow?.webContents.toggleDevTools();
   });
 });
 

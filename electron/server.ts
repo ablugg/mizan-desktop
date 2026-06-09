@@ -1,6 +1,8 @@
-import { spawn, ChildProcess } from "child_process";
+import { spawn, execFileSync, ChildProcess } from "child_process";
+import http from "http";
 import net from "net";
 import path from "path";
+import fs from "fs";
 import { app } from "electron";
 
 let serverProcess: ChildProcess | null = null;
@@ -16,39 +18,84 @@ function getAvailablePort(): Promise<number> {
   });
 }
 
-function waitForPort(port: number, timeoutMs = 30_000): Promise<void> {
+function waitForHttp(port: number, timeoutMs = 60_000): Promise<void> {
   return new Promise((resolve, reject) => {
     const deadline = Date.now() + timeoutMs;
 
-    function tryConnect() {
-      const socket = net.createConnection({ port, host: "127.0.0.1" });
-      socket.on("connect", () => {
-        socket.destroy();
+    function tryRequest() {
+      const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+        res.resume();
         resolve();
       });
-      socket.on("error", () => {
-        socket.destroy();
+      req.setTimeout(1000);
+      req.on("error", () => {
         if (Date.now() >= deadline) {
           reject(new Error("Next.js server did not start in time"));
         } else {
-          setTimeout(tryConnect, 250);
+          setTimeout(tryRequest, 500);
+        }
+      });
+      req.on("timeout", () => {
+        req.destroy();
+        if (Date.now() >= deadline) {
+          reject(new Error("Next.js server did not start in time"));
+        } else {
+          setTimeout(tryRequest, 500);
         }
       });
     }
 
-    tryConnect();
+    tryRequest();
   });
+}
+
+function runPrismaMigrate(userData: string, appPath: string): void {
+  const schemaPath = path.join(appPath, "prisma/schema.prisma");
+  if (!fs.existsSync(schemaPath)) return;
+
+  try {
+    // Locate prisma CLI relative to the app
+    const prismaBin = path.join(appPath, "node_modules/.bin/prisma");
+    const cli = fs.existsSync(prismaBin) ? prismaBin : "prisma";
+    execFileSync(cli, ["migrate", "deploy", "--schema", schemaPath], {
+      env: {
+        ...process.env,
+        DATABASE_URL: `file:${path.join(userData, "mizan.db")}`,
+      },
+      stdio: "ignore",
+    });
+    console.log("[db] Migrations applied.");
+  } catch {
+    // migrate deploy may fail on first run if no migrations exist — try db push instead
+    try {
+      const prismaBin = path.join(appPath, "node_modules/.bin/prisma");
+      const cli = fs.existsSync(prismaBin) ? prismaBin : "prisma";
+      execFileSync(cli, ["db", "push", "--schema", schemaPath, "--accept-data-loss"], {
+        env: {
+          ...process.env,
+          DATABASE_URL: `file:${path.join(userData, "mizan.db")}`,
+        },
+        stdio: "ignore",
+      });
+      console.log("[db] Schema pushed.");
+    } catch (e) {
+      console.error("[db] Failed to initialise database:", e);
+    }
+  }
 }
 
 export async function startNextServer(): Promise<number> {
   if (process.env.NODE_ENV === "development") {
-    // Dev server is already running via `next dev`
     return 3000;
   }
 
   const port = await getAvailablePort();
-  const serverScript = path.join(app.getAppPath(), ".next/standalone/server.js");
+  const appPath = app.getAppPath();
+  const serverScript = path.join(appPath, ".next/standalone/server.js");
   const userData = app.getPath("userData");
+
+  // Ensure the database schema exists before starting the server
+  runPrismaMigrate(userData, appPath);
 
   serverProcess = spawn(process.execPath, [serverScript], {
     env: {
@@ -65,10 +112,9 @@ export async function startNextServer(): Promise<number> {
 
   serverProcess.stdout?.on("data", (d) => console.log("[next]", d.toString().trim()));
   serverProcess.stderr?.on("data", (d) => console.error("[next]", d.toString().trim()));
-
   serverProcess.on("error", (err) => console.error("[next] Process error:", err));
 
-  await waitForPort(port);
+  await waitForHttp(port);
   console.log(`[next] Server ready on port ${port}`);
   return port;
 }
