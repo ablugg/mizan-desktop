@@ -17,6 +17,7 @@
     "electron:build": "npm run build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && npm run electron:compile && electron-builder --config electron.builder.yml"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
     "@lancedb/lancedb": "^0.9.0",
     "@prisma/client": "^5.0.0",
     "@radix-ui/react-dialog": "^1.1.0",

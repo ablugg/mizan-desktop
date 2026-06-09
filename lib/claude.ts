@@ -1,11 +1,18 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { Ollama } from "ollama";
 
 const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
-export const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:14b";
+// DEFAULT_MODEL kept for backward-compat (setup/status checks it), but AI calls use Claude
+export const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? "claude-sonnet-4-6";
 export const EMBEDDING_MODEL = process.env.OLLAMA_EMBEDDING_MODEL ?? "nomic-embed-text";
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
 
 export function getOllama() {
   return new Ollama({ host: OLLAMA_HOST });
+}
+
+function getAnthropic() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 }
 
 export const SYSTEM_PROMPT = `You are Mizan, an AI legal assistant specializing in Saudi Arabian law. You are precise, structured, and authoritative.
@@ -41,12 +48,14 @@ export async function chat(messages: ChatMessage[], context?: string): Promise<s
     ? `${SYSTEM_PROMPT}\n\nRelevant legal context:\n${context}`
     : SYSTEM_PROMPT;
 
-  const response = await getOllama().chat({
-    model: DEFAULT_MODEL,
-    messages: [{ role: "system", content: system }, ...messages],
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 4096,
+    system,
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
   });
 
-  return response.message.content;
+  return response.content[0].type === "text" ? response.content[0].text : "";
 }
 
 export async function* chatStream(
@@ -58,15 +67,17 @@ export async function* chatStream(
     systemPromptOverride ??
     (context ? `${SYSTEM_PROMPT}\n\nRelevant legal context:\n${context}` : SYSTEM_PROMPT);
 
-  const stream = await getOllama().chat({
-    model: DEFAULT_MODEL,
-    messages: [{ role: "system", content: system }, ...messages],
-    stream: true,
+  const stream = getAnthropic().messages.stream({
+    model: CLAUDE_MODEL,
+    max_tokens: 4096,
+    system,
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
   });
 
-  for await (const chunk of stream) {
-    const text = chunk.message?.content;
-    if (text) yield text;
+  for await (const event of stream) {
+    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+      yield event.delta.text;
+    }
   }
 }
 
@@ -75,22 +86,23 @@ export async function chatWithSystem(
   systemPrompt: string,
   userContent: string
 ): Promise<string> {
-  const response = await getOllama().chat({
-    model: DEFAULT_MODEL,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-    ],
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 8192,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userContent }],
   });
-  return response.message.content;
+
+  return response.content[0].type === "text" ? response.content[0].text : "";
 }
 
 export async function generateTitle(
   userMessage: string,
   assistantResponse: string
 ): Promise<string> {
-  const response = await getOllama().chat({
-    model: DEFAULT_MODEL,
+  const response = await getAnthropic().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 64,
     messages: [
       {
         role: "user",
@@ -98,7 +110,7 @@ export async function generateTitle(
       },
     ],
   });
-  return response.message.content.trim() || userMessage.slice(0, 60);
+  return (response.content[0].type === "text" ? response.content[0].text.trim() : "") || userMessage.slice(0, 60);
 }
 
 export const ATTORNEY_SYSTEM_PROMPT = `You are Mizan, an advanced AI legal research assistant for licensed attorneys specializing in Saudi Arabian and GCC law. You assist qualified legal professionals with in-depth research, analysis, and drafting.

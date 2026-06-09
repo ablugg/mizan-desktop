@@ -103,7 +103,7 @@ export async function startNextServer(): Promise<number> {
       HOSTNAME: "127.0.0.1",
       NODE_ENV: "production",
       DATABASE_URL: `file:${path.join(userData, "mizan.db")}`,
-      VECTOR_DB_PATH: path.join(userData, "vector-store"),
+      VECTOR_DB_PATH: path.join(process.resourcesPath, "vector-store"),
       OLLAMA_HOST: "http://127.0.0.1:11434",
     },
     stdio: "pipe",

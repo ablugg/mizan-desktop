@@ -19,6 +19,7 @@ files:
   - "node_modules/prisma/**/*"
   - "node_modules/@prisma/migrate/**/*"
   - "node_modules/@prisma/engines/**/*"
+  - "node_modules/@anthropic-ai/**/*"
 
 extraResources:
   - from: "build/icon.png"
