@@ -137,7 +137,9 @@ async function main() {
 
     try {
       const text = fs.readFileSync(filePath, "utf-8");
-      const chunks = chunkText(text);
+      const isLargeAnnotated = source.file.includes("annotated");
+      const chunkSize = isLargeAnnotated ? 80 : source.language === "ar" ? 150 : CHUNK_SIZE;
+      const chunks = chunkText(text, chunkSize);
       console.log(`  ${chunks.length} chunks`);
 
       const embeddings = await embedBatch(chunks);

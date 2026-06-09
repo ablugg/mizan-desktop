@@ -6,25 +6,36 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 import { createWriteStream } from "fs";
+import { execSync } from "child_process";
 
-const OLLAMA_VERSION = "0.5.13";
+const OLLAMA_VERSION = "0.30.7";
 
-const BINARIES = [
+const ARCHIVES = [
   {
-    url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-darwin`,
+    url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-darwin.tgz`,
+    archive: "/tmp/ollama-darwin.tgz",
     dest: "resources/ollama/mac/ollama",
+    extract: (archive: string, destDir: string) => {
+      execSync(`tar -xzf "${archive}" -C "${destDir}"`);
+      // Binary is named 'ollama' inside the tarball
+      const bin = path.join(destDir, "ollama");
+      if (!fs.existsSync(bin)) throw new Error(`ollama binary not found in tarball at ${bin}`);
+    },
     platform: "macOS",
   },
   {
-    url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-windows-amd64.exe`,
+    url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-windows-amd64.zip`,
+    archive: "/tmp/ollama-windows.zip",
     dest: "resources/ollama/win/ollama.exe",
+    extract: (archive: string, destDir: string) => {
+      execSync(`unzip -o "${archive}" ollama.exe -d "${destDir}"`);
+    },
     platform: "Windows",
   },
 ];
 
 function download(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
     const file = createWriteStream(dest);
 
     function get(url: string) {
@@ -47,8 +58,9 @@ function download(url: string, dest: string): Promise<void> {
           }
         });
         res.pipe(file);
-        res.on("end", () => {
+        file.on("finish", () => {
           process.stdout.write("\n");
+          file.close();
           resolve();
         });
       }).on("error", reject);
@@ -60,13 +72,20 @@ function download(url: string, dest: string): Promise<void> {
 }
 
 async function main() {
-  for (const { url, dest, platform } of BINARIES) {
+  for (const { url, archive, dest, extract, platform } of ARCHIVES) {
     if (fs.existsSync(dest)) {
       console.log(`[skip] ${platform} binary already exists at ${dest}`);
       continue;
     }
+    const destDir = path.dirname(dest);
+    fs.mkdirSync(destDir, { recursive: true });
+
     console.log(`Downloading Ollama ${OLLAMA_VERSION} for ${platform}...`);
-    await download(url, dest);
+    await download(url, archive);
+
+    console.log(`  Extracting...`);
+    extract(archive, destDir);
+
     fs.chmodSync(dest, 0o755);
     console.log(`  Saved to ${dest}`);
   }
