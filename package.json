@@ -5,7 +5,7 @@
   "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
@@ -13,7 +13,7 @@
     "build:vectors": "tsx data/ingestion/build-vectors.ts",
     "download:ollama": "tsx scripts/download-ollama.ts",
     "electron:compile": "tsc --project electron/tsconfig.json",
-    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && NODE_ENV=development electron .\"",
+    "electron:dev": "npm run electron:compile && concurrently \"next dev -p 3100\" \"wait-on http://localhost:3100 && NODE_ENV=development electron .\"",
     "electron:build": "npm run build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && npm run electron:compile && electron-builder --config electron.builder.yml"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.0",
     "ai": "^4.0.0",
+    "archiver": "^8.0.0",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
@@ -44,13 +45,16 @@
     "recharts": "^3.8.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.3.0",
+    "unzipper": "^0.12.3",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/archiver": "^8.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/unzipper": "^0.10.11",
     "concurrently": "^9.1.2",
     "electron": "^34.0.0",
     "electron-builder": "^25.1.8",

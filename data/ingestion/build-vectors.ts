@@ -101,7 +101,7 @@ const SOURCES: Array<{
   { file: "implementing-regulations-of-appeal-procedures-ar.txt", source: "Implementing Regulations of Appeal Procedures", statute: "Minister of Justice Decision No. 5134", language: "ar" },
 ];
 
-async function main() {
+export async function main() {
   console.log(`Building Mizan vector store -- ${SOURCES.length} source files\n`);
   console.log(`Output: ${VECTOR_DB_PATH}\n`);
 

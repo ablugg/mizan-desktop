@@ -19,7 +19,6 @@ files:
   - "node_modules/prisma/**/*"
   - "node_modules/@prisma/migrate/**/*"
   - "node_modules/@prisma/engines/**/*"
-  - "node_modules/@anthropic-ai/**/*"
 
 extraResources:
   - from: "build/icon.png"
@@ -63,5 +62,17 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
+
+linux:
+  icon: build/icon.png
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
 
 publish: null

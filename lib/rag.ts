@@ -8,8 +8,13 @@ async function getLanceDB() {
 }
 
 const TABLE_NAME = "legal_chunks";
+const USER_TABLE_NAME = "user_chunks";
 
 let connectionCache: unknown = null;
+
+export function resetConnection() {
+  connectionCache = null;
+}
 
 async function getConnection() {
   if (connectionCache) return connectionCache as Awaited<ReturnType<(typeof import("@lancedb/lancedb"))["connect"]>>;
@@ -43,50 +48,53 @@ export interface LegalChunk {
 
 export async function retrieveContext(
   query: string,
-  topK = 5
+  topK = 3
 ): Promise<string> {
-  try {
-    const db = await getConnection();
-    const table = await db.openTable(TABLE_NAME);
-    const queryEmbedding = await embed(query);
+  const queryEmbedding = await embed(query);
+  const db = await getConnection();
 
-    const results = await table
-      .search(queryEmbedding)
-      .limit(topK)
-      .toArray();
-
-    if (!results.length) return "";
-
-    return results
-      .map((r: LegalChunk) => {
-        const meta = r as LegalChunk;
-        return `[${meta.source} -- ${meta.jurisdiction}${meta.statute ? ` -- ${meta.statute}` : ""}]\n${meta.text}`;
-      })
-      .join("\n\n---\n\n");
-  } catch (err) {
-    console.error("RAG retrieval failed:", err);
-    return "";
+  async function searchTable(tableName: string): Promise<LegalChunk[]> {
+    try {
+      const table = await db.openTable(tableName);
+      return await table.search(queryEmbedding).limit(topK).toArray() as LegalChunk[];
+    } catch {
+      return [];
+    }
   }
+
+  const [baseResults, userResults] = await Promise.all([
+    searchTable(TABLE_NAME),
+    searchTable(USER_TABLE_NAME),
+  ]);
+
+  const all = [...baseResults, ...userResults];
+  if (!all.length) return "";
+
+  return all
+    .map((meta) => `[${meta.source} -- ${meta.jurisdiction}${meta.statute ? ` -- ${meta.statute}` : ""}]\n${meta.text}`)
+    .join("\n\n---\n\n");
 }
 
 export async function addUserLaw(doc: {
+  lawId: string;
   text: string;
   source: string;
   jurisdiction?: string;
   statute?: string;
   language?: string;
-}): Promise<void> {
+}): Promise<number> {
   const { chunkText } = await import("../data/ingestion/build-vectors");
   const lancedb = await getLanceDB();
   const db = await getConnection();
 
   const chunks = chunkText(doc.text);
-  const records = [];
+  if (chunks.length === 0) return 0;
 
+  const records = [];
   for (let i = 0; i < chunks.length; i++) {
     const embedding = await embed(chunks[i]);
     records.push({
-      id: `user-${doc.source.replace(/[^a-z0-9]/gi, "-")}-${i}`,
+      id: `ul-${doc.lawId}-${i}`,
       vector: embedding,
       text: chunks[i],
       source: doc.source,
@@ -98,10 +106,28 @@ export async function addUserLaw(doc: {
   }
 
   try {
-    const table = await db.openTable(TABLE_NAME);
+    const table = await db.openTable(USER_TABLE_NAME);
     await table.add(records);
   } catch {
     // Table doesn't exist yet -- create it
-    await db.createTable(TABLE_NAME, records);
+    const freshDb = await lancedb.connect(
+      process.env.VECTOR_DB_PATH ?? path.join(process.cwd(), "data/vector-store")
+    );
+    await freshDb.createTable(USER_TABLE_NAME, records);
+    connectionCache = null; // force reconnect so cache points to same db
+  }
+
+  return records.length;
+}
+
+export async function deleteUserLawChunks(lawId: string): Promise<void> {
+  const db = await getConnection();
+  try {
+    const table = await db.openTable(USER_TABLE_NAME);
+    await (table as unknown as { delete: (filter: string) => Promise<void> }).delete(
+      `id LIKE 'ul-${lawId}-%'`
+    );
+  } catch {
+    // Table may not exist -- nothing to delete
   }
 }

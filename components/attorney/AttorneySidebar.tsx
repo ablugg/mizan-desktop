@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe } from "lucide-react";
+import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe, LibraryBig } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -15,6 +15,7 @@ const TOOL_DEFS: { href: string; labelKey: TranslationKey; subKey: TranslationKe
   { href: "/attorney/translate", labelKey: "attorney.translate", subKey: "attorney.translate.sub", icon: Languages },
   { href: "/attorney/clauses", labelKey: "attorney.clauses", subKey: "attorney.clauses.sub", icon: BookOpen },
   { href: "/attorney/deadlines", labelKey: "attorney.deadlines", subKey: "attorney.deadlines.sub", icon: CalendarClock },
+  { href: "/attorney/laws", labelKey: "attorney.laws", subKey: "attorney.laws.sub", icon: LibraryBig },
   { href: "/attorney/stats", labelKey: "attorney.stats", subKey: "attorney.stats.sub", icon: BarChart2 },
 ];
 

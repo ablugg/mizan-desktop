@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AttorneyApplication } from "@/types";
-import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Zap, Lock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Zap, Lock, RefreshCw } from "lucide-react";
 
 type AppWithUser = AttorneyApplication & { user?: { id: string; email: string; role: string } | null };
 
@@ -19,6 +19,8 @@ export default function AdminPanel({ applications, totalEnclaveCount, totalSessi
   const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
   const [activating, setActivating] = useState(false);
   const [activateStatus, setActivateStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "ok" | "error">("idle");
 
   async function activateEnclave() {
     setActivating(true);
@@ -30,6 +32,19 @@ export default function AdminPanel({ applications, totalEnclaveCount, totalSessi
       setActivateStatus("error");
     } finally {
       setActivating(false);
+    }
+  }
+
+  async function syncLaws() {
+    setSyncing(true);
+    setSyncStatus("idle");
+    try {
+      const res = await fetch("/api/admin/sync-laws", { method: "POST", credentials: "include" });
+      setSyncStatus(res.ok ? "ok" : "error");
+    } catch {
+      setSyncStatus("error");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -72,7 +87,23 @@ export default function AdminPanel({ applications, totalEnclaveCount, totalSessi
             Attorney Applications
           </h1>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
+          <button
+            onClick={syncLaws}
+            disabled={syncing}
+            style={{
+              display: "flex", alignItems: "center", gap: "7px",
+              padding: "8px 16px", borderRadius: "8px", fontSize: "12px",
+              fontFamily: "var(--font-dm-sans)", cursor: syncing ? "default" : "pointer",
+              opacity: syncing ? 0.6 : 1, transition: "all 0.15s",
+              background: syncStatus === "ok" ? "rgba(74,197,110,0.12)" : syncStatus === "error" ? "rgba(200,50,50,0.08)" : "rgba(100,140,220,0.08)",
+              border: `1px solid ${syncStatus === "ok" ? "rgba(74,197,110,0.3)" : syncStatus === "error" ? "rgba(200,50,50,0.25)" : "rgba(100,140,220,0.25)"}`,
+              color: syncStatus === "ok" ? "#6bc98a" : syncStatus === "error" ? "#e07070" : "#7eb8f7",
+            }}
+          >
+            <RefreshCw size={13} style={{ animation: syncing ? "spin 1s linear infinite" : "none" }} />
+            {syncing ? "Rebuilding…" : syncStatus === "ok" ? "Sync Done" : syncStatus === "error" ? "Sync Failed" : "Sync Laws"}
+          </button>
           <button
             onClick={activateEnclave}
             disabled={activating}
@@ -87,7 +118,7 @@ export default function AdminPanel({ applications, totalEnclaveCount, totalSessi
             }}
           >
             <Zap size={13} />
-            {activating ? "Activating…" : activateStatus === "ok" ? "Enclave Activated" : activateStatus === "error" ? "Activation Failed" : "Activate Enclave"}
+            {activating ? "Checking…" : activateStatus === "ok" ? "Service Active" : activateStatus === "error" ? "Check Failed" : "Check Service"}
           </button>
         </div>
       </div>
@@ -98,7 +129,7 @@ export default function AdminPanel({ applications, totalEnclaveCount, totalSessi
           <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "8px" }}>
             <Lock size={11} style={{ color: "rgba(74,197,110,0.7)" }} />
             <span style={{ fontSize: "9px", letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(74,197,110,0.55)", fontFamily: "var(--font-dm-sans)" }}>
-              Enclave Invocations
+              Local AI Invocations
             </span>
           </div>
           <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "36px", fontWeight: 300, color: "#6bc98a", lineHeight: 1 }}>
