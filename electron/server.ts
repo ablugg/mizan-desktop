@@ -1,11 +1,11 @@
-import { spawn, execFileSync, ChildProcess } from "child_process";
+import { execFileSync } from "child_process";
 import http from "http";
 import net from "net";
 import path from "path";
 import fs from "fs";
-import { app } from "electron";
+import { app, utilityProcess, UtilityProcess } from "electron";
 
-let serverProcess: ChildProcess | null = null;
+let serverProcess: UtilityProcess | null = null;
 
 function getAvailablePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -97,7 +97,7 @@ export async function startNextServer(): Promise<number> {
   // Ensure the database schema exists before starting the server
   runPrismaMigrate(userData, appPath);
 
-  serverProcess = spawn(process.execPath, [serverScript], {
+  serverProcess = utilityProcess.fork(serverScript, [], {
     env: {
       ...process.env,
       PORT: String(port),
@@ -107,12 +107,12 @@ export async function startNextServer(): Promise<number> {
       VECTOR_DB_PATH: path.join(userData, "vector-store"),
       OLLAMA_HOST: "http://127.0.0.1:11434",
     },
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: "pipe",
   });
 
-  serverProcess.stdout?.on("data", (d) => console.log("[next]", d.toString().trim()));
-  serverProcess.stderr?.on("data", (d) => console.error("[next]", d.toString().trim()));
-  serverProcess.on("error", (err) => console.error("[next] Process error:", err));
+  serverProcess.stdout?.on("data", (d: Buffer) => console.log("[next]", d.toString().trim()));
+  serverProcess.stderr?.on("data", (d: Buffer) => console.error("[next]", d.toString().trim()));
+  serverProcess.on("exit", (code) => console.error(`[next] Process exited with code ${code}`));
 
   await waitForHttp(port);
   console.log(`[next] Server ready on port ${port}`);
@@ -125,3 +125,4 @@ export async function stopNextServer(): Promise<void> {
     serverProcess = null;
   }
 }
+

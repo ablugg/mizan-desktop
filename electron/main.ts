@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Menu, globalShortcut } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, globalShortcut, utilityProcess } from "electron";
 import path from "path";
 import { startNextServer, stopNextServer } from "./server";
 import { OllamaManager } from "./ollama";
@@ -45,6 +45,8 @@ function createWindow(port: number) {
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
+    // Always open DevTools so startup errors are visible
+    mainWindow?.webContents.openDevTools();
   });
 
   // If the page fails to load, retry after a short delay
