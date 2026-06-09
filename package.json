@@ -14,7 +14,7 @@
     "download:ollama": "tsx scripts/download-ollama.ts",
     "electron:compile": "tsc --project electron/tsconfig.json",
     "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && NODE_ENV=development electron .\"",
-    "electron:build": "npm run build && npm run electron:compile && electron-builder --config electron.builder.yml"
+    "electron:build": "npm run build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && npm run electron:compile && electron-builder --config electron.builder.yml"
   },
   "dependencies": {
     "@lancedb/lancedb": "^0.9.0",

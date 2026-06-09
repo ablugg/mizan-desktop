@@ -6,6 +6,8 @@ directories:
   output: dist-electron
   buildResources: build
 
+asar: false
+
 files:
   - "electron/dist/**/*"
   - ".next/standalone/**/*"
