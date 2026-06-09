@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock } from "lucide-react";
+import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -19,7 +19,7 @@ const TOOL_DEFS: { href: string; labelKey: TranslationKey; subKey: TranslationKe
 ];
 
 export function AttorneySidebar() {
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -265,6 +265,15 @@ export function AttorneySidebar() {
                 {isLight ? <Moon size={13} /> : <Sun size={13} />}
               </button>
               <button
+                title={locale === "ar" ? "Switch to English" : "Switch to Arabic"}
+                onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s", fontSize: "9px", fontFamily: "var(--font-dm-sans)", letterSpacing: "0.1em" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = tc.logoutColor; }}
+              >
+                <Globe size={13} />
+              </button>
+              <button
                 title="Lock session"
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; }}
@@ -311,6 +320,19 @@ export function AttorneySidebar() {
                 }
                 <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: tc.themeLabelColor, fontFamily: "var(--font-dm-sans)", transition: "color 0.5s" }}>
                   {tc.themeLabel}
+                </span>
+              </button>
+
+              {/* Language toggle */}
+              <button
+                onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+                style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: "transparent", border: `1px solid ${tc.toggleBorder}`, cursor: "pointer", transition: "all 0.2s", marginTop: "6px" }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.3)"; e.currentTarget.style.background = "rgba(201,168,76,0.06)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.toggleBorder; e.currentTarget.style.background = "transparent"; }}
+              >
+                <Globe size={11} style={{ color: tc.toggleColor, flexShrink: 0 }} />
+                <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: tc.themeLabelColor, fontFamily: "var(--font-dm-sans)", transition: "color 0.5s" }}>
+                  {locale === "ar" ? "ENGLISH" : "العربية"}
                 </span>
               </button>
             </>
