@@ -25,6 +25,8 @@ extraResources:
     to: "icon.png"
   - from: "resources/seed.db"
     to: "seed.db"
+  - from: ".env"
+    to: ".env"
   - from: "resources/ollama/"
     to: "ollama/"
     filter: "**/*"

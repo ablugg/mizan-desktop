@@ -48,6 +48,24 @@ function waitForHttp(port: number, timeoutMs = 60_000): Promise<void> {
   });
 }
 
+function loadEnvFile(): Record<string, string> {
+  const envPath = app.isPackaged
+    ? path.join(process.resourcesPath, ".env")
+    : path.join(app.getAppPath(), ".env");
+  if (!fs.existsSync(envPath)) return {};
+  const result: Record<string, string> = {};
+  for (const line of fs.readFileSync(envPath, "utf-8").split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) continue;
+    const idx = t.indexOf("=");
+    if (idx === -1) continue;
+    const key = t.slice(0, idx).trim();
+    const val = t.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+    result[key] = val;
+  }
+  return result;
+}
+
 function ensureDatabase(userData: string): void {
   const dbPath = path.join(userData, "mizan.db");
   if (fs.existsSync(dbPath)) return;
@@ -75,8 +93,11 @@ export async function startNextServer(): Promise<number> {
   // Ensure database exists on first launch
   ensureDatabase(userData);
 
+  const envFileVars = loadEnvFile();
+
   serverProcess = utilityProcess.fork(serverScript, [], {
     env: {
+      ...envFileVars,
       ...process.env,
       PORT: String(port),
       HOSTNAME: "127.0.0.1",

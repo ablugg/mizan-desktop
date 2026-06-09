@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const dir = "rtl";
 
   return (
-    <html lang={locale} dir={dir} className={`${dmSans.variable} ${cormorant.variable} ${notoArabic.variable}`}>
+    <html lang={locale} dir={dir} className={`${dmSans.variable} ${cormorant.variable} ${notoArabic.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#0d1e38" />
       </head>
