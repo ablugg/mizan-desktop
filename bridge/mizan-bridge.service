@@ -1,0 +1,27 @@
+[Unit]
+Description=Mizan Enclave Bridge
+Documentation=https://github.com/your-org/mizan
+After=network.target
+# Restart if the enclave process also restarts
+Wants=nitro-enclaves-allocator.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/mizan/bridge
+
+# Secrets injected at runtime — never hardcoded
+EnvironmentFile=/etc/mizan/bridge.env
+
+ExecStart=/usr/bin/python3 /home/ubuntu/mizan/bridge/server.py
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/home/ubuntu/mizan/bridge
+
+[Install]
+WantedBy=multi-user.target

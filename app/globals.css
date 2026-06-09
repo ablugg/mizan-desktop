@@ -1,0 +1,255 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Lapis lazuli dark palette */
+  --bg-base:        #111e34;
+  --bg-sidebar:     #0d1e38;
+  --bg-surface:     #172540;
+  --bg-elevated:    #1e3255;
+  --bg-input:       #142038;
+
+  /* Borders */
+  --border:         rgba(100,140,200,0.11);
+  --border-gold:    rgba(201,168,76,0.2);
+
+  /* Gold accents — unchanged, contrast beautifully against lapis */
+  --gold:           #c9a84c;
+  --gold-light:     #e8c96d;
+  --gold-dim:       rgba(201,168,76,0.45);
+
+  /* Lapis blue accents */
+  --lapis:          #1a3a6b;
+  --lapis-mid:      #1e4d8c;
+  --lapis-bright:   #2e6dbf;
+  --lapis-glow:     rgba(46,109,191,0.15);
+
+  /* Text — warm white with slight blue tint */
+  --text-primary:   #dde4f0;
+  --text-secondary: #7a8aaa;
+  --text-muted:     #3d4f6e;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --bg-base: #080f1e;
+    --bg-sidebar: #060d1a;
+  }
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Arabic / RTL font support */
+html[lang="ar"] body {
+  font-family: var(--font-arabic), sans-serif;
+}
+
+html[lang="ar"] * {
+  letter-spacing: 0 !important;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes enclaveDot {
+  0%, 60%, 100% { opacity: 0.2; transform: translateY(0); }
+  30%            { opacity: 1;   transform: translateY(-3px); }
+}
+
+@keyframes enclavePulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes enclaveRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-elevated) transparent;
+}
+*::-webkit-scrollbar { width: 3px; height: 3px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 2px; }
+
+/* ── Clerk Theme Overrides ──────────────────────────────── */
+.cl-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-gold) !important;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,168,76,0.06) !important;
+  border-radius: 12px !important;
+}
+.cl-headerTitle {
+  color: var(--text-primary) !important;
+  font-family: var(--font-cormorant), serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.04em !important;
+}
+.cl-headerSubtitle {
+  color: var(--text-secondary) !important;
+}
+.cl-formFieldLabel {
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+.cl-formFieldInput {
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+.cl-formFieldInput:focus {
+  border-color: rgba(201,168,76,0.4) !important;
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.08) !important;
+  outline: none !important;
+}
+.cl-formButtonPrimary {
+  background: linear-gradient(135deg, #c9a84c, #e8c96d) !important;
+  color: #0d1117 !important;
+  font-weight: 500 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 16px rgba(201,168,76,0.25) !important;
+  transition: box-shadow 0.2s, filter 0.2s !important;
+}
+.cl-formButtonPrimary:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 4px 24px rgba(201,168,76,0.35) !important;
+}
+.cl-socialButtonsBlockButton {
+  background: var(--bg-input) !important;
+  border-color: var(--border-gold) !important;
+  color: var(--text-primary) !important;
+  border-radius: 6px !important;
+}
+.cl-socialButtonsBlockButton:hover {
+  background: var(--bg-elevated) !important;
+}
+.cl-socialButtonsBlockButtonText {
+  color: var(--text-primary) !important;
+}
+.cl-dividerLine {
+  background: var(--border) !important;
+}
+.cl-dividerText {
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+}
+.cl-footer {
+  background: transparent !important;
+  border-top: 1px solid var(--border) !important;
+}
+.cl-footerActionLink {
+  color: var(--gold) !important;
+}
+.cl-footerActionLink:hover {
+  color: var(--gold-light) !important;
+}
+.cl-identityPreviewText {
+  color: var(--text-primary) !important;
+}
+.cl-identityPreviewEditButton {
+  color: var(--gold) !important;
+}
+.cl-otpCodeFieldInput {
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+.cl-formResendCodeLink {
+  color: var(--gold) !important;
+}
+.cl-alert {
+  background: rgba(224,82,82,0.08) !important;
+  border-color: rgba(224,82,82,0.2) !important;
+}
+.cl-alertText {
+  color: #f0a0a0 !important;
+}
+.cl-formFieldInputShowPasswordButton {
+  color: var(--text-secondary) !important;
+}
+.cl-userPreviewMainIdentifier,
+.cl-userPreviewSecondaryIdentifier {
+  color: var(--text-primary) !important;
+}
+.cl-internal-wkkub3 {
+  display: none !important;
+}
+
+/* Hide Clerk development mode badge */
+.cl-internal-1dauvpw,
+.cl-badge,
+.cl-badge--development {
+  display: none !important;
+}
+
+/* Clerk card entrance is handled by the parent wrapper's fadeUp animation.
+   No separate .cl-card animation needed — it inherits the wrapper's opacity. */
+
+/* ── Legal Research markdown rendering ── */
+.research-md { color: #ffffff; font-family: var(--font-cormorant); font-size: 15px; font-weight: 300; line-height: 1.8; }
+.research-md p { margin: 0 0 0.75em; }
+.research-md p:last-child { margin-bottom: 0; }
+.research-md h1, .research-md h2 { font-family: var(--font-cormorant); font-weight: 400; color: #e8d5a0; line-height: 1.3; margin: 1.2em 0 0.4em; }
+.research-md h1 { font-size: 18px; }
+.research-md h2 { font-size: 16px; }
+.research-md h3 { font-family: var(--font-dm-sans); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(201,168,76,0.85); margin: 1em 0 0.35em; }
+.research-md strong { font-weight: 600; color: #ffffff; font-family: var(--font-cormorant); }
+.research-md em { font-style: italic; color: rgba(255,255,255,0.85); }
+.research-md ul, .research-md ol { padding-left: 1.4em; margin: 0.5em 0 0.75em; }
+.research-md li { margin-bottom: 0.3em; }
+.research-md code { font-family: monospace; font-size: 12px; background: rgba(255,255,255,0.07); padding: 1px 5px; border-radius: 4px; color: rgba(201,168,76,0.9); }
+.research-md pre { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 0.75em 0; }
+.research-md pre code { background: none; padding: 0; color: rgba(255,255,255,0.85); font-size: 13px; }
+.research-md blockquote { border-left: 2px solid rgba(201,168,76,0.3); padding-left: 12px; color: rgba(255,255,255,0.7); margin: 0.75em 0; font-style: italic; }
+.research-md hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 1em 0; }
+.research-md table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 0.75em 0; }
+.research-md th { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(201,168,76,0.25); color: rgba(201,168,76,0.8); font-family: var(--font-dm-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.research-md td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+.research-md a { color: rgba(201,168,76,0.8); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Draft Generator markdown rendering ── */
+.draft-md { color: #ffffff; font-family: var(--font-cormorant); font-size: 15px; font-weight: 300; line-height: 1.9; word-break: break-word; }
+.draft-md p { margin: 0 0 0.8em; }
+.draft-md p:last-child { margin-bottom: 0; }
+.draft-md h1, .draft-md h2 { font-family: var(--font-cormorant); font-weight: 400; color: #e8d5a0; line-height: 1.3; margin: 1.4em 0 0.5em; }
+.draft-md h1 { font-size: 18px; }
+.draft-md h2 { font-size: 16px; }
+.draft-md h3 { font-family: var(--font-dm-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(201,168,76,0.8); margin: 1.2em 0 0.4em; }
+.draft-md strong { font-weight: 600; color: #ffffff; }
+.draft-md em { font-style: italic; color: rgba(255,255,255,0.85); }
+.draft-md ul, .draft-md ol { padding-left: 1.5em; margin: 0.5em 0 0.8em; }
+.draft-md li { margin-bottom: 0.3em; }
+.draft-md hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 1.2em 0; }
+.draft-md-ar { text-align: right; }

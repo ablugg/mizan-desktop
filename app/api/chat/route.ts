@@ -1,0 +1,162 @@
+import { NextRequest, NextResponse } from "next/server";
+import { retrieveContext } from "@/lib/rag";
+import { db } from "@/lib/db";
+import { chatStream, generateTitle, SYSTEM_PROMPT } from "@/lib/claude";
+import { encryptMessage, decryptMessage } from "@/lib/message-crypto";
+import { LOCAL_USER_ID } from "@/lib/local-auth";
+
+export async function POST(req: NextRequest) {
+  const { messages, conversationId, documentIds, attachedFiles, arabicMode } =
+    await req.json();
+
+  const lastUserMessage: string = messages[messages.length - 1]?.content ?? "";
+
+  const hasDocuments = !!documentIds?.length;
+
+  const [context, documentContext] = await Promise.all([
+    hasDocuments
+      ? Promise.resolve("")
+      : retrieveContext(lastUserMessage).then((ctx) => {
+          console.log(`[chat] RAG context length=${ctx.length} chars`);
+          return ctx;
+        }),
+    (async () => {
+      if (!hasDocuments) return "";
+      try {
+        const docs = await db.document.findMany({
+          where: { id: { in: documentIds }, userId: LOCAL_USER_ID },
+          select: { id: true, name: true, content: true, encryptedContent: true },
+        });
+
+        const parts = await Promise.all(
+          docs.map(async (doc) => {
+            let text = doc.content;
+            if (
+              (text === "[server-encrypted]" || text === "[encrypted]") &&
+              doc.encryptedContent
+            ) {
+              try {
+                text = decryptMessage(doc.encryptedContent);
+              } catch {
+                text = "[document decryption failed]";
+              }
+            }
+            const truncated = text.slice(0, 20_000);
+            return `--- Document: ${doc.name} ---\n${truncated}\n---`;
+          })
+        );
+
+        const result = parts.join("\n\n");
+        console.log(`[chat] Loaded ${docs.length} document(s), context=${result.length} chars`);
+        return result;
+      } catch (e) {
+        console.error("[chat] Failed to load documents:", e);
+        return "";
+      }
+    })(),
+  ]);
+
+  const systemWithContext = [
+    SYSTEM_PROMPT,
+    arabicMode
+      ? "IMPORTANT: You must respond exclusively in Arabic, regardless of the language used by the user. Do not use any other language in your response."
+      : null,
+    context ? `Relevant legal context:\n${context}` : null,
+    documentContext ? `Uploaded documents for review:\n${documentContext}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  // Verify conversation ownership and save user message
+  let validConversationId: string | null = conversationId ?? null;
+  if (validConversationId) {
+    const exists = await db.conversation.findUnique({
+      where: { id: validConversationId },
+      select: { id: true },
+    });
+    if (!exists) {
+      console.warn(`[chat] Conversation ${validConversationId} not found`);
+      validConversationId = null;
+    } else {
+      await db.message.create({
+        data: {
+          conversationId: validConversationId,
+          role: "user",
+          content: "[server-encrypted]",
+          encryptedContent: encryptMessage(lastUserMessage),
+          ...(attachedFiles?.length ? { attachedFiles: JSON.stringify(attachedFiles) } : {}),
+        },
+      });
+    }
+  }
+
+  const stream = chatStream(messages, context, systemWithContext);
+
+  let fullResponse = "";
+  let chunkCount = 0;
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      for await (const text of stream) {
+        fullResponse += text;
+        chunkCount++;
+        controller.enqueue(new TextEncoder().encode(text));
+      }
+
+      console.log(`[chat] Stream complete -- ${chunkCount} chunks, ${fullResponse.length} chars`);
+
+      if (validConversationId) {
+        await db.message.create({
+          data: {
+            conversationId: validConversationId,
+            role: "assistant",
+            content: "[server-encrypted]",
+            encryptedContent: encryptMessage(fullResponse),
+          },
+        });
+
+        await db.conversation.update({
+          where: { id: validConversationId },
+          data: { updatedAt: new Date() },
+        });
+
+        const messageCount = await db.message.count({
+          where: { conversationId: validConversationId },
+        });
+
+        const isGreeting =
+          /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|howdy|greetings|مرحبا|أهلا|السلام\s+عليكم)[\s!,.?]*$/i.test(
+            lastUserMessage.trim()
+          );
+
+        const shouldTitle =
+          (messageCount === 2 && !isGreeting) ||
+          (messageCount === 4 &&
+            (
+              await db.conversation.findUnique({
+                where: { id: validConversationId },
+                select: { title: true },
+              })
+            )?.title === "New Conversation");
+
+        if (shouldTitle) {
+          try {
+            const newTitle = await generateTitle(lastUserMessage, fullResponse);
+            await db.conversation.update({
+              where: { id: validConversationId },
+              data: { title: "enc:" + encryptMessage(newTitle) },
+            });
+          } catch (e) {
+            console.error("[chat] Failed to generate title", e);
+          }
+        }
+      }
+
+      controller.close();
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Mizan",
+  "short_name": "Mizan",
+  "description": "AI-powered legal assistant for Saudi law",
+  "start_url": "/chat/new",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1e38",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
