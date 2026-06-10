@@ -245,7 +245,7 @@ export default function ClausesPage() {
             Your standard positions · Check contracts against your playbook
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            Contract cross-referencing with playbook is processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -507,7 +507,7 @@ export default function ClausesPage() {
                       Check Contract Against Playbook
                     </div>
                     <div style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", fontFamily: "var(--font-dm-sans)" }}>
-                      Contract cross-referencing with playbook is processed in Secure Enclave
+                      Fully local · 0 bytes leave your device
                     </div>
                   </div>
 

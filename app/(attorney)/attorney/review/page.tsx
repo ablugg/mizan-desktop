@@ -102,7 +102,7 @@ export default function ReviewPage() {
             Structured risk analysis · PDF, DOCX, TXT · Attorney-grade output
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            End-to-end encrypted · Processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
         <SessionHistory tool="REVIEW" onRestore={handleRestore} refreshTrigger={historyRefresh} />
@@ -146,7 +146,7 @@ export default function ReviewPage() {
 
           {loading && (
             <EnclaveProcessing
-              label="Analysing document in Secure Enclave"
+              label="Analysing document locally"
               sublabel="This may take 15–30 seconds · Larger files will take longer · You can freely use other tools"
             />
           )}

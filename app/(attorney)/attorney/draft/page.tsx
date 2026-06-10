@@ -234,7 +234,7 @@ export default function DraftPage() {
             Jurisdiction-aware document drafting · Export to Word
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            End-to-end encrypted · Processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -250,7 +250,7 @@ export default function DraftPage() {
       <div className="flex-1 overflow-y-auto" style={{ position: "relative", zIndex: 1, scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent", display: "flex", flexDirection: "column" }}>
         {/* Enclave animation while pending but no content yet */}
         {isPending && !content ? (
-          <EnclaveProcessing label="Drafting document in Secure Enclave" sublabel="This may take 20–40 seconds · Larger files will take longer" />
+          <EnclaveProcessing label="Drafting document locally" sublabel="This may take 20–40 seconds · Larger files will take longer" />
         ) : !content ? (
           // Form
           <div style={{ maxWidth: "680px", margin: "auto", width: "100%", padding: "28px 0" }}>

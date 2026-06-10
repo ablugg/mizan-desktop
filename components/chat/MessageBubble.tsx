@@ -148,7 +148,7 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
                   <path d="M5.5 0L11 2.6V6C11 9.08 8.59 11.96 5.5 13C2.41 11.96 0 9.08 0 6V2.6L5.5 0Z" fill="rgba(201,168,76,0.5)" />
                 </svg>
                 <span className="tracking-wide" style={{ fontFamily: "var(--font-dm-sans)", fontSize: "13px" }}>
-                  Processing in secure enclave
+                  Processing locally
                 </span>
                 <span className="inline-flex items-end gap-[3px]" style={{ marginBottom: "1px" }}>
                   {[0, 0.2, 0.4].map((delay, i) => (

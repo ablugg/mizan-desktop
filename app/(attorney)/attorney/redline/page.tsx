@@ -166,7 +166,7 @@ export default function RedlinePage() {
             Inline suggested changes · Accept or reject individually · Export to Word
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            End-to-end encrypted · Processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
         <SessionHistory tool="REDLINE" onRestore={handleRestore} refreshTrigger={historyRefresh} />
@@ -234,7 +234,7 @@ export default function RedlinePage() {
 
               {loading && (
                 <EnclaveProcessing
-                  label="Analysing contract in Secure Enclave"
+                  label="Analysing contract locally"
                   sublabel="This may take 20–40 seconds · Larger files will take longer · You can freely use other tools"
                 />
               )}

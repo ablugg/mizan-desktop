@@ -132,7 +132,7 @@ export default function TranslatePage() {
             Arabic ↔ English · Legal terminology · Key term glossary
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            End-to-end encrypted · Processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function TranslatePage() {
           {/* Enclave animation while loading */}
           {loading && (
             <EnclaveProcessing
-              label="Translating in Secure Enclave"
+              label="Translating locally"
               sublabel={inputMode === "document" ? "This may take 20–40 seconds · Larger files will take longer" : "This may take a few seconds"}
             />
           )}

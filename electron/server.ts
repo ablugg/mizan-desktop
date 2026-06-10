@@ -83,7 +83,7 @@ function ensureDatabase(userData: string): void {
 
 export async function startNextServer(): Promise<number> {
   if (process.env.NODE_ENV === "development") {
-    return 3000;
+    return 3100;
   }
 
   const port = await getAvailablePort();

@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
 
   const readableStream = new ReadableStream({
     async start(controller) {
+      try {
       for await (const text of stream) {
         fullResponse += text;
         chunkCount++;
@@ -153,6 +154,12 @@ export async function POST(req: NextRequest) {
       }
 
       controller.close();
+      } catch (streamErr) {
+        console.error("[chat] Stream error:", streamErr);
+        const errMsg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+        controller.enqueue(new TextEncoder().encode(`\n\n[Error: ${errMsg}]`));
+        controller.close();
+      }
     },
   });
 

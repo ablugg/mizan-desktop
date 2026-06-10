@@ -128,7 +128,7 @@ export default function DeadlinesPage() {
             Obligations · Notice periods · Renewal windows · Recurring duties
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            End-to-end encrypted · Processed in Secure Enclave
+            Fully local · 0 bytes leave your device
           </p>
         </div>
         {entries && (
@@ -170,7 +170,7 @@ export default function DeadlinesPage() {
 
           {loading && (
             <EnclaveProcessing
-              label="Extracting deadlines in Secure Enclave"
+              label="Extracting deadlines locally"
               sublabel="This may take 20–40 seconds for longer contracts"
             />
           )}

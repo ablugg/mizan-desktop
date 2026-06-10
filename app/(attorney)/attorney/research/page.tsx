@@ -148,7 +148,7 @@ export default function ResearchPage() {
             In-depth Q&A · Saudi &amp; GCC Law · Session saved &amp; retrievable
           </p>
           <p style={{ fontSize: "10px", color: "rgba(201,168,76,0.5)", marginTop: "3px", fontFamily: "var(--font-dm-sans)" }}>
-            Research sessions are not processed in the Secure Enclave · as it is not necessary
+            All processing is local · 0 bytes leave your device
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

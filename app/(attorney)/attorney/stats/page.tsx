@@ -156,7 +156,7 @@ export default function StatsPage() {
               {/* Summary cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "36px" }}>
                 <StatCard label="Total Sessions" value={total} isLight={isLight} />
-                <StatCard label="Enclave Invocations" value={data.enclaveCount} sub="Review · Draft · Redline · Translate · Deadlines · Playbook" isLight={isLight} />
+                <StatCard label="Local AI Invocations" value={data.enclaveCount} sub="Review · Draft · Redline · Translate · Deadlines · Playbook" isLight={isLight} />
                 <StatCard label="Most Used Tool" value={total > 0 ? mostUsedLabel : "—"} isLight={isLight} />
               </div>
 
@@ -196,7 +196,7 @@ export default function StatsPage() {
                               boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                               zIndex: 10,
                             }}>
-                              This tool is processed in Mizan&apos;s Secure Enclave
+                              This tool is processed locally · 0 bytes leave your device
                             </div>
                           </div>
                         )}

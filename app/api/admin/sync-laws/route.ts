@@ -2,23 +2,20 @@ import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
 import os from "os";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Archiver } = require("archiver") as { Archiver: new (format: string, opts: object) => import("archiver").Archiver };
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
 
 const VECTOR_DB_PATH =
   process.env.VECTOR_DB_PATH ?? path.join(process.cwd(), "data/vector-store");
 
 const TABLE_DIR = path.join(VECTOR_DB_PATH, "legal_chunks.lance");
 
-function zipDirectory(sourceDir: string, outputPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const output = fs.createWriteStream(outputPath);
-    const archive = new Archiver("zip", { zlib: { level: 6 } });
-    output.on("close", resolve);
-    archive.on("error", reject);
-    archive.pipe(output);
-    archive.directory(sourceDir, "legal_chunks.lance");
-    archive.finalize();
+async function zipDirectory(sourceDir: string, outputPath: string): Promise<void> {
+  // zip -r <output> <dirName> run from the parent directory
+  await execFileAsync("zip", ["-r", outputPath, path.basename(sourceDir)], {
+    cwd: path.dirname(sourceDir),
   });
 }
 

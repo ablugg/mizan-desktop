@@ -71,7 +71,7 @@ export function EnclaveProcessing({
           letterSpacing: "0.03em",
         }}
       >
-        {label ?? "Processing in Secure Enclave"}
+        {label ?? "Processing locally"}
       </p>
 
       <p
@@ -84,7 +84,7 @@ export function EnclaveProcessing({
           textTransform: "uppercase",
         }}
       >
-        Encrypted end-to-end
+        0 bytes leave your device
       </p>
 
       <p

@@ -67,13 +67,13 @@ function LanguageIcon() {
 const FEATURES = [
   {
     icon: <ShieldIcon />,
-    title: "Secure Enclave Processing",
-    body: "Every message is processed inside an AWS Nitro Enclave, an isolated hardware-verified environment. End-to-end encryption ensures that even Mizan's operators cannot read your conversations.",
+    title: "0 Bytes Leave Your Device",
+    body: "Every message is processed entirely on your machine. No data is sent to any server, cloud, or third party. Your conversations, documents, and client information stay completely private.",
   },
   {
     icon: <DocumentIcon />,
     title: "Saudi Law Document Review",
-    body: "Upload contracts, agreements, or legal documents for analysis grounded in Saudi law: Labour Law, PDPL, Companies Law, and more. All document content is processed within the enclave so your client information never leaves the secure boundary.",
+    body: "Upload contracts, agreements, or legal documents for analysis grounded in Saudi law: Labour Law, PDPL, Companies Law, and more. All document content is processed locally so your client information never leaves your device.",
   },
   {
     icon: <LanguageIcon />,

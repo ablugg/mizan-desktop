@@ -1694,7 +1694,7 @@ window.addEventListener('load', function() {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       <span data-i18n="nav_home">Home</span>
     </a>
-    <a href="#" class="nav-cta" data-i18n="nav_cta" onclick="openRequestAccessModal(); return false;">Request Access</a>
+    <a href="#download" class="nav-cta" data-i18n="nav_cta">Download Mizan</a>
   </div>
 </nav>
 
@@ -1747,7 +1747,7 @@ window.addEventListener('load', function() {
       Other legal AI tools promise encryption. Mizan goes further: the AI itself runs on your machine. Your documents, queries, and client matters never leave your device. 0 bytes sent.
     </p>
     <div class="hero-cta-group">
-      <a href="#" class="btn-gold" data-i18n="hero_cta_primary" onclick="openRequestAccessModal(); return false;">Request Attorney Access</a>
+      <a href="#download" class="btn-gold" data-i18n="hero_cta_primary">Download Mizan</a>
       <a href="#confidentiality" class="btn-ghost" data-i18n="hero_cta_secondary">How It Works</a>
     </div>
   </div>
@@ -2195,6 +2195,10 @@ window.addEventListener('load', function() {
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
   <span data-i18n="tab8">Activity Monitor</span>
 </button>
+      <button class="tool-tab" role="tab" data-panel="panel-9" onclick="switchTab(this)">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  <span data-i18n="tab9">Law Library</span>
+</button>
     </div>
 
     <div class="tool-panels">
@@ -2333,6 +2337,25 @@ window.addEventListener('load', function() {
         </div>
         <div class="tool-video-wrap">
           <img src="assets/pictures/activity.png" alt="Mizan Activity Monitor" loading="lazy" style="width:100%;display:block;pointer-events:none;aspect-ratio:16/9;object-fit:cover;" />
+        </div>
+      </div>
+
+      <div class="tool-panel" id="panel-9">
+        <div class="tool-info">
+          <div class="tool-tag" data-i18n="p9_tag">Law Library</div>
+          <div class="tool-title" data-i18n="p9_title">Law Library</div>
+          <div class="tool-desc" data-i18n="p9_desc">Upload your own statutes, regulations, and circulars as .txt or .pdf files. Mizan chunks and embeds them locally, making them searchable by every tool in the workspace. The AI cites your uploads alongside the pre-ingested laws.</div>
+          <div class="tool-features">
+            <div class="tool-feature"><div class="tool-feature-dot"></div><span data-i18n="p9_f1">Upload .pdf and .txt statutes directly into your workspace</span></div>
+            <div class="tool-feature"><div class="tool-feature-dot"></div><span data-i18n="p9_f2">Documents are chunked and embedded entirely on your machine</span></div>
+            <div class="tool-feature"><div class="tool-feature-dot"></div><span data-i18n="p9_f3">Sync pre-ingested laws from Mizan with one click, no reinstall required</span></div>
+            <div class="tool-feature"><div class="tool-feature-dot"></div><span data-i18n="p9_f4">Your uploads persist independently and are never wiped by law updates</span></div>
+          </div>
+        </div>
+        <div class="tool-video-wrap">
+          <div style="width:100%;aspect-ratio:16/9;background:rgba(255,255,255,0.02);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.35)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
         </div>
       </div>
 
@@ -2568,6 +2591,16 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false" onclick="toggleFaq(this)">
+          <span data-i18n="faq8_q">Is Mizan free?</span>
+          <svg class="faq-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-a">
+          <p data-i18n="faq8_a">Yes. Mizan is free for verified Saudi attorneys. There are no subscription fees, no per-query charges, and no premium tiers. The platform is built as a contribution to the Saudi legal profession. If you find Mizan valuable, you can support its development through GitHub Sponsors; the link is in the application sidebar. Sponsorship is entirely optional and has no effect on access or features.</p>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -2652,13 +2685,13 @@ window.addEventListener('load', function() {
 <!-- FOOTER CTA -->
 <section class="page-closing" style="background:var(--lapis-page);">
   <div class="page-closing-inner">
-    <div class="section-eyebrow" data-i18n="close_eyebrow">Join Saudi's First Truly Confidential Legal AI</div>
+    <div class="section-eyebrow" data-i18n="close_eyebrow">Saudi's First Truly Confidential Legal AI</div>
     <h2 data-i18n-html="close_title">Your client matters<br>belong to <em>you</em></h2>
     <p data-i18n="close_body">
-      Mizan is currently accepting verified Saudi Bar Association members. Apply for attorney access and become part of the legal practice that refuses to compromise on confidentiality.
+      Mizan is free for verified Saudi Bar Association members. Download the application, complete attorney verification, and your client data never leaves your device.
     </p>
     <div class="page-closing-actions">
-      <span class="btn-gold-wrap"><a href="#" class="btn-gold" data-i18n="close_cta_primary" onclick="openRequestAccessModal(); return false;">Request Attorney Access</a></span>
+      <span class="btn-gold-wrap"><a href="#download" class="btn-gold" data-i18n="close_cta_primary">Download Mizan</a></span>
       <button onclick="openContactModal()" class="btn-ghost" data-i18n="close_cta_secondary" style="color:#1a1a1a;border-color:rgba(0,0,0,0.25);">Contact the Team</button>
     </div>
   </div>
@@ -3602,11 +3635,11 @@ var TRANSLATIONS = {
   en: {
     nav_page: 'For Lawyers',
     nav_home: 'Home',
-    nav_cta: 'Request Access',
+    nav_cta: 'Download Mizan',
     hero_eyebrow: 'For Legal Professionals in Saudi Arabia',
     hero_title: 'Saudi\'s only<br><em>truly confidential</em><br>legal assistant',
     hero_subtitle: 'Other legal AI tools promise encryption. Mizan goes further: the AI itself runs on your machine. Your documents, queries, and client matters never leave your device. 0 bytes sent.',
-    hero_cta_primary: 'Request Attorney Access',
+    hero_cta_primary: 'Download Mizan',
     hero_cta_secondary: 'How It Works',
     scroll_label: 'Explore',
     conf_eyebrow: 'Why Confidentiality Matters',
@@ -3674,6 +3707,7 @@ var TRANSLATIONS = {
     tab6: 'Clause Playbook',
     tab7: 'Deadline Extractor',
     tab8: 'Activity Monitor',
+    tab9: 'Law Library',
     p1_tag: 'Legal Research',
     p1_title: 'Legal Research',
     p1_desc: 'Ask anything about Saudi law across Labour Law, Civil Transactions, Criminal Procedure, and PDPL. Responses are comprehensive, fully cited, and tailored for attorney-level analysis. Sessions are saved and retrievable. All processing is local. 0 bytes leave your device.',
@@ -3731,6 +3765,13 @@ var TRANSLATIONS = {
     p8_f3: 'Daily activity chart across the last 30 days',
     p8_f4: 'Security log: sign-ins with location, auto-locks, and manual lockdown events',
     p8_f5: 'Session distribution by tool for usage insights',
+    p9_tag: 'Law Library',
+    p9_title: 'Law Library',
+    p9_desc: 'Upload your own statutes, regulations, and circulars as .txt or .pdf files. Mizan chunks and embeds them locally, making them searchable by every tool in the workspace. The AI cites your uploads alongside the pre-ingested laws.',
+    p9_f1: 'Upload .pdf and .txt statutes directly into your workspace',
+    p9_f2: 'Documents are chunked and embedded entirely on your machine',
+    p9_f3: 'Sync pre-ingested laws from Mizan with one click, no reinstall required',
+    p9_f4: 'Your uploads persist independently and are never wiped by law updates',
     app_eyebrow: 'Workspace Customization',
     app_title: 'Built for how you work',
     dark_label: 'Dark Mode',
@@ -3762,15 +3803,17 @@ var TRANSLATIONS = {
     faq2_q: 'Is Mizan compliant with Saudi PDPL?',
     faq2_a: 'Yes. Mizan is designed in alignment with the Saudi Personal Data Protection Law (PDPL) and its implementing regulations. Client matter data processed locally is never retained, shared with third parties, or used for model training. The platform\'s zero-retention architecture means there is no personal data stored beyond what is strictly necessary for session continuity. We do not transfer client data to any external system.',
     faq3_q: 'Who can access Mizan? Is it open to everyone?',
-    faq3_a: 'Mizan is currently in a restricted beta open to verified Saudi Bar Association members and licensed legal professionals practising in the Kingdom. Access requires identity verification and professional credential confirmation. This is intentional -- the platform is purpose-built for qualified attorneys, not general users, and access controls are part of how we protect the integrity of the workspace.',
+    faq3_a: 'Mizan is available to verified Saudi Bar Association members and licensed legal professionals practising in the Kingdom. Download the application and create your attorney account to get started. The platform is purpose-built for qualified attorneys, and we verify professional credentials before granting workspace access.',
     faq4_q: 'Does Mizan\'s AI use my data to train its models?',
     faq4_a: 'Never. Your client matters, uploaded documents, and queries are never used to train, fine-tune, or improve any AI model -- ours or any third party\'s. Local inference makes this structurally impossible: the AI model runs on your machine with no connection back to any training pipeline. Your data never reaches any external system. This is a design guarantee, not just a policy commitment.',
     faq5_q: 'What Saudi laws does Mizan cover? What is out of scope?',
-    faq5_a: 'Mizan currently has deep coverage of Saudi Labour Law, Civil Transactions Law, Criminal Procedure Code, Personal Data Protection Law, Commercial Court Law, and the MOJ Legal Dictionary. Areas not yet fully covered include Sharia court-specific rulings, Zakat and tax regulations, sector-specific regulatory frameworks (e.g. SAMA, CMA), and recent ministerial circulars issued after the last knowledge update. We are continuously expanding coverage -- the platform shows article-level sourcing so you always know what is grounded and what is not.',
+    faq5_a: 'Mizan currently has deep coverage of Saudi Labour Law, Civil Transactions Law, Criminal Procedure Code, Personal Data Protection Law, Commercial Court Law, and the MOJ Legal Dictionary. Areas not yet fully covered include Sharia court-specific rulings, Zakat and tax regulations, sector-specific regulatory frameworks (e.g. SAMA, CMA), and recent ministerial circulars issued after the last knowledge update. We are continuously expanding coverage. Attorneys can also upload their own statutes and regulations through the Law Library tool, making any new or sector-specific law immediately available to every tool in the workspace. The platform shows article-level sourcing so you always know what is grounded and what is not.',
     faq6_q: 'How does local AI processing actually work?',
     faq6_a: 'Mizan uses Ollama to run the AI model directly on your machine. When you submit a query or upload a document, Mizan sends it to Ollama at 127.0.0.1 -- your own device\'s localhost address. The model processes the request entirely on your hardware and returns the response. No internet connection is made for inference. The only external network request in Mizan\'s entire operation is the one-time model weight download during setup. After that, everything runs offline on your machine.',
     faq7_q: 'Can I use Mizan on behalf of a firm, not just individually?',
     faq7_a: 'Firm-level accounts with multi-attorney workspaces, matter management, and per-attorney audit logs are on the roadmap. Currently, each attorney maintains their own individual workspace. If you are interested in a firm deployment, contact us -- we are onboarding select early firms on a case-by-case basis ahead of the firm workspace launch.',
+    faq8_q: 'Is Mizan free?',
+    faq8_a: 'Yes. Mizan is free for verified Saudi attorneys. There are no subscription fees, no per-query charges, and no premium tiers. The platform is built as a contribution to the Saudi legal profession. If you find Mizan valuable, you can support its development through GitHub Sponsors; the link is in the application sidebar. Sponsorship is entirely optional and has no effect on access or features.',
     dl_eyebrow: 'Available Now',
     dl_title: 'Download Mizan',
     dl_lead: 'The AI runs entirely on your machine. Install Mizan once, open a browser, and your client data never leaves your device.',
@@ -3779,10 +3822,10 @@ var TRANSLATIONS = {
     dl_linux_btn: 'Download .deb',
     dl_detected_prefix: 'We detected',
     dl_detected_suffix: ' -- your download is highlighted above.',
-    close_eyebrow: 'Join Saudi\'s First Truly Confidential Legal AI',
+    close_eyebrow: 'Saudi\'s First Truly Confidential Legal AI',
     close_title: 'Your client matters<br>belong to <em>you</em>',
-    close_body: 'Mizan is currently accepting verified Saudi Bar Association members. Apply for attorney access and become part of the legal practice that refuses to compromise on confidentiality.',
-    close_cta_primary: 'Request Attorney Access',
+    close_body: 'Mizan is free for verified Saudi Bar Association members. Download the application, complete attorney verification, and your client data never leaves your device.',
+    close_cta_primary: 'Download Mizan',
     close_cta_secondary: 'Contact the Team',
     footer_copy: '\u00a9 2026 Mizan. All rights reserved.',
     footer_home: 'Home',
@@ -3792,11 +3835,11 @@ var TRANSLATIONS = {
   ar: {
     nav_page: 'للمحامين',
     nav_home: 'الرئيسية',
-    nav_cta: 'طلب الوصول',
+    nav_cta: 'تنزيل ميزان',
     hero_eyebrow: 'للمتخصصين القانونيين في المملكة العربية السعودية',
     hero_title: 'المساعد القانوني<br><em>السري الحقيقي</em><br>الوحيد في السعودية',
     hero_subtitle: 'أدوات الذكاء الاصطناعي القانونية الأخرى تعد بالتشفير. ميزان يذهب أبعد من ذلك: الذكاء الاصطناعي نفسه يعمل على جهازك. مستنداتك واستفساراتك وقضايا موكليك لا تغادر جهازك أبداً. صفر بايت يُرسَل.',
-    hero_cta_primary: 'طلب وصول المحامي',
+    hero_cta_primary: 'تنزيل ميزان',
     hero_cta_secondary: 'كيف يعمل',
     scroll_label: 'استكشف',
     conf_eyebrow: 'لماذا السرية مهمة',
@@ -3864,6 +3907,7 @@ var TRANSLATIONS = {
     tab6: 'دليل البنود',
     tab7: 'استخراج المواعيد',
     tab8: 'مراقب النشاط',
+    tab9: 'مكتبة الأنظمة',
     p1_tag: 'البحث القانوني',
     p1_title: 'البحث القانوني',
     p1_desc: 'اسأل عن أي شيء في الأنظمة السعودية عبر نظام العمل والمعاملات المدنية والإجراءات الجزائية ونظام PDPL. الردود شاملة ومستندة بالكامل ومصممة للتحليل على مستوى المحامين. الجلسات محفوظة وقابلة للاسترجاع. كل المعالجة محلية. صفر بايت يغادر جهازك.',
@@ -3921,6 +3965,13 @@ var TRANSLATIONS = {
     p8_f3: 'مخطط النشاط اليومي خلال آخر 30 يوماً',
     p8_f4: 'سجل الأمان: تسجيلات الدخول بالموقع، الإغلاق التلقائي، وأحداث الإغلاق اليدوي',
     p8_f5: 'توزيع الجلسات حسب الأداة لرؤى الاستخدام',
+    p9_tag: 'مكتبة الأنظمة',
+    p9_title: 'مكتبة الأنظمة',
+    p9_desc: 'ارفع أنظمتك الخاصة ولوائحك وتعاميمك بصيغة .txt أو .pdf. يقوم ميزان بتقطيعها وتضمينها محلياً، مما يجعلها قابلة للبحث بواسطة كل أداة في مساحة العمل. يستشهد الذكاء الاصطناعي بمرفوعاتك جنباً إلى جنب مع الأنظمة المُدرجة مسبقاً.',
+    p9_f1: 'رفع الأنظمة بصيغة .pdf و.txt مباشرة في مساحة العمل',
+    p9_f2: 'تُقطَّع المستندات وتُضمَّن كلياً على جهازك',
+    p9_f3: 'زامن الأنظمة المُدرجة مسبقاً من ميزان بنقرة واحدة دون إعادة تثبيت',
+    p9_f4: 'مرفوعاتك تستمر باستقلالية ولا تُمسح بتحديثات الأنظمة',
     app_eyebrow: 'تخصيص مساحة العمل',
     app_title: 'مصمم لطريقة عملك',
     dark_label: 'الوضع الداكن',
@@ -3952,15 +4003,17 @@ var TRANSLATIONS = {
     faq2_q: 'هل ميزان متوافق مع نظام PDPL السعودي؟',
     faq2_a: 'نعم. ميزان مصمم بما يتوافق مع نظام حماية البيانات الشخصية السعودي (PDPL) ولوائحه التنفيذية. بيانات قضايا الموكلين المعالجة محلياً لا تُحتفظ بها، ولا تُشارَك مع أطراف ثالثة، ولا تُستخدَم لتدريب النماذج. بنية الاحتفاظ الصفري للمنصة تعني عدم تخزين أي بيانات شخصية تتجاوز ما هو ضروري للغاية لاستمرارية الجلسة. لا ننقل بيانات الموكلين إلى أي نظام خارجي.',
     faq3_q: 'من يمكنه الوصول إلى ميزان؟ هل هو مفتوح للجميع؟',
-    faq3_a: 'ميزان حالياً في نسخة تجريبية مقيّدة مفتوحة لأعضاء هيئة المحامين السعوديين الموثّقين والمتخصصين القانونيين المرخصين الممارسين في المملكة. يتطلب الوصول التحقق من الهوية وتأكيد الاعتماد المهني. هذا مقصود -- المنصة مبنية خصيصاً للمحامين المؤهلين لا للمستخدمين العامين، وضوابط الوصول جزء من كيفية حماية نزاهة مساحة العمل.',
+    faq3_a: 'ميزان متاح لأعضاء هيئة المحامين السعوديين الموثّقين والمتخصصين القانونيين المرخصين الممارسين في المملكة. نزّل التطبيق وأنشئ حساب محاميك للبدء. المنصة مبنية خصيصاً للمحامين المؤهلين، ونتحقق من الاعتمادات المهنية قبل منح الوصول لمساحة العمل.',
     faq4_q: 'هل يستخدم الذكاء الاصطناعي في ميزان بياناتي لتدريب نماذجه؟',
     faq4_a: 'أبداً. قضايا موكليك، المستندات المرفوعة، والاستفسارات لا تُستخدَم أبداً لتدريب أو ضبط دقيق أو تحسين أي نموذج ذكاء اصطناعي -- سواء أنظمتنا أو أي طرف ثالث. الاستنتاج المحلي يجعل هذا مستحيلاً هيكلياً: نموذج الذكاء الاصطناعي يعمل على جهازك دون اتصال بأي خط أنابيب تدريبي. بياناتك لا تصل أبداً إلى أي نظام خارجي. هذا ضمان تصميمي، ليس مجرد التزام بالسياسات.',
     faq5_q: 'ما الأنظمة السعودية التي يغطيها ميزان؟ وما الذي خارج النطاق؟',
-    faq5_a: 'ميزان لديه حالياً تغطية معمّقة لنظام العمل السعودي، ونظام المعاملات المدنية، ونظام الإجراءات الجزائية، ونظام حماية البيانات الشخصية، ونظام المحاكم التجارية، والمعجم القانوني لوزارة العدل. المجالات غير المغطاة بشكل كامل بعد تشمل: أحكام محاكم الشريعة الخاصة، وأنظمة الزكاة والضرائب، والأطر التنظيمية القطاعية مثل ساما وهيئة السوق المالية، والتعاميم الوزارية الصادرة بعد آخر تحديث للمعرفة. نحن نوسع التغطية باستمرار -- تُظهر المنصة الاستشهادات على مستوى المواد حتى تعرف دائماً ما هو مستند وما ليس كذلك.',
+    faq5_a: 'ميزان لديه حالياً تغطية معمّقة لنظام العمل السعودي، ونظام المعاملات المدنية، ونظام الإجراءات الجزائية، ونظام حماية البيانات الشخصية، ونظام المحاكم التجارية، والمعجم القانوني لوزارة العدل. المجالات غير المغطاة بشكل كامل بعد تشمل: أحكام محاكم الشريعة الخاصة، وأنظمة الزكاة والضرائب، والأطر التنظيمية القطاعية مثل ساما وهيئة السوق المالية، والتعاميم الوزارية الصادرة بعد آخر تحديث للمعرفة. نحن نوسع التغطية باستمرار. يمكن للمحامين أيضاً رفع أنظمتهم ولوائحهم الخاصة مباشرة من خلال أداة مكتبة الأنظمة، مما يجعل أي نظام جديد أو قطاعي متاحاً فوراً لكل أداة في مساحة العمل. تُظهر المنصة الاستشهادات على مستوى المواد حتى تعرف دائماً ما هو مستند وما ليس كذلك.',
     faq6_q: 'كيف تعمل معالجة الذكاء الاصطناعي المحلية فعلياً؟',
     faq6_a: 'ميزان يستخدم Ollama لتشغيل نموذج الذكاء الاصطناعي مباشرة على جهازك. عندما تُرسل استفساراً أو ترفع مستنداً، يُرسله ميزان إلى Ollama على العنوان 127.0.0.1 -- عنوان الخادم المحلي لجهازك. النموذج يعالج الطلب كلياً على معدّاتك ويُعيد الرد. لا اتصال إنترنت يُجرى للاستنتاج. الطلب الشبكي الخارجي الوحيد في كامل عملية ميزان هو التنزيل لمرة واحدة لأوزان النموذج أثناء الإعداد. بعد ذلك، كل شيء يعمل دون اتصال بالإنترنت على جهازك.',
     faq7_q: 'هل يمكنني استخدام ميزان نيابة عن مكتب محاماة وليس بشكل فردي فقط؟',
     faq7_a: 'حسابات على مستوى المكتب مع مساحات عمل متعددة للمحامين وإدارة القضايا وسجلات تدقيق لكل محامٍ على خارطة الطريق. حالياً، كل محامٍ يحتفظ بمساحة عمل فردية خاصة به. إذا كنت مهتماً بنشر على مستوى المكتب، تواصل معنا -- نحن نعمل مع مكاتب مختارة مبكرة على أساس كل حالة على حدة قبل إطلاق مساحة عمل المكتب.',
+    faq8_q: 'هل ميزان مجاني؟',
+    faq8_a: 'نعم. ميزان مجاني للمحامين السعوديين الموثّقين. لا رسوم اشتراك، ولا رسوم لكل استفسار، ولا مستويات مدفوعة. المنصة مبنية كمساهمة في المهنة القانونية السعودية. إذا وجدت ميزان ذا قيمة، يمكنك دعم تطويره عبر GitHub Sponsors؛ الرابط موجود في الشريط الجانبي للتطبيق. الدعم اختياري تماماً ولا يؤثر على الوصول أو الميزات.',
     dl_eyebrow: 'متاح الآن',
     dl_title: 'تنزيل ميزان',
     dl_lead: 'يعمل الذكاء الاصطناعي كلياً على جهازك. ثبّت ميزان مرة واحدة، افتح المتصفح، وبيانات موكلك لا تغادر جهازك أبداً.',
@@ -3969,10 +4022,10 @@ var TRANSLATIONS = {
     dl_linux_btn: 'تنزيل .deb',
     dl_detected_prefix: 'اكتشفنا أنك تستخدم',
     dl_detected_suffix: ' -- تنزيلك موضّح أعلاه.',
-    close_eyebrow: 'انضم إلى أول ذكاء اصطناعي قانوني سري حقيقي في السعودية',
+    close_eyebrow: 'أول ذكاء اصطناعي قانوني سري حقيقي في السعودية',
     close_title: 'قضايا موكليك<br>تعود <em>لك وحدك</em>',
-    close_body: 'يستقبل ميزان حالياً أعضاء هيئة المحامين السعوديين الموثقين. تقدم بطلب وصول المحامي وكن جزءاً من الممارسة القانونية التي ترفض التنازل عن السرية.',
-    close_cta_primary: 'طلب وصول المحامي',
+    close_body: 'ميزان مجاني لأعضاء هيئة المحامين السعوديين الموثّقين. نزّل التطبيق، أكمل التحقق من هوية المحامي، وبيانات موكلك لن تغادر جهازك أبداً.',
+    close_cta_primary: 'تنزيل ميزان',
     close_cta_secondary: 'تواصل مع الفريق',
     footer_copy: '\u00a9 2026 ميزان. جميع الحقوق محفوظة.',
     footer_home: 'الرئيسية',

@@ -1,12 +1,7 @@
 "use client";
 
-import { createContext, useContext, useRef, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useRef, useState, useCallback } from "react";
 import { Message } from "@/types";
-import {
-  loadOrGenerateKeypair,
-  exportPublicKeyBase64,
-  decryptEnclaveResponse,
-} from "@/lib/enclave-activation";
 
 type ResearchContextValue = {
   messages: Message[];
@@ -29,24 +24,9 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const clientKeypairRef = useRef<CryptoKeyPair | null>(null);
-  const enclavePublicKeyRef = useRef<string | null>(null);
   // Keep a stable ref to current messages for use inside async callbacks
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = messages;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        clientKeypairRef.current = await loadOrGenerateKeypair();
-        const res = await fetch("/api/enclave/public-key");
-        if (res.ok) {
-          const data = await res.json();
-          enclavePublicKeyRef.current = data.public_key ?? null;
-        }
-      } catch {}
-    })();
-  }, []);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isStreaming) return;
@@ -69,11 +49,6 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
     try {
       abortRef.current = new AbortController();
 
-      let clientPublicKey: string | undefined;
-      if (clientKeypairRef.current) {
-        clientPublicKey = await exportPublicKeyBase64(clientKeypairRef.current.publicKey);
-      }
-
       // Snapshot messages at time of send (excluding the new assistant placeholder)
       const history = messagesRef.current
         .filter((m) => m.id !== aiId)
@@ -86,14 +61,12 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           conversationId: null,
           messages: [...history, { role: "user", content }],
-          clientPublicKey,
         }),
         signal: abortRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Request failed");
 
-      const contentType = response.headers.get("Content-Type") ?? "";
       let accumulated = "";
       let displayed = "";
       let animating = false;
@@ -114,54 +87,16 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
         requestAnimationFrame(animateNext);
       }
 
-      if (contentType.includes("application/x-ndjson")) {
-        if (!response.body) throw new Error("No body");
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const line of lines) {
-            const t = line.trim();
-            if (!t) continue;
-            try {
-              const chunk = JSON.parse(t);
-              if (clientKeypairRef.current && enclavePublicKeyRef.current) {
-                const plain = await decryptEnclaveResponse(
-                  chunk,
-                  clientKeypairRef.current.privateKey,
-                  enclavePublicKeyRef.current
-                );
-                accumulated += plain;
-                if (!animating) {
-                  animating = true;
-                  requestAnimationFrame(animateNext);
-                }
-              }
-            } catch {}
-          }
-        }
-        displayed = accumulated;
-        if (!animating)
-          setMessages((prev) =>
-            prev.map((m) => (m.id === aiId ? { ...m, content: accumulated } : m))
-          );
-      } else {
-        if (!response.body) throw new Error("No body");
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          accumulated += decoder.decode(value, { stream: true });
-          if (!animating) {
-            animating = true;
-            requestAnimationFrame(animateNext);
-          }
+      if (!response.body) throw new Error("No body");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        if (!animating) {
+          animating = true;
+          requestAnimationFrame(animateNext);
         }
       }
     } catch (err) {

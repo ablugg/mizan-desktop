@@ -1,19 +1,22 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { Ollama } from "ollama";
 
 const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://127.0.0.1:11434";
-// DEFAULT_MODEL kept for backward-compat (setup/status checks it), but AI calls use Claude
-export const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? "claude-sonnet-4-6";
+export const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:7b";
 export const EMBEDDING_MODEL = process.env.OLLAMA_EMBEDDING_MODEL ?? "nomic-embed-text";
-const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
 
 export function getOllama() {
   return new Ollama({ host: OLLAMA_HOST });
 }
 
-function getAnthropic() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
+// Inference options applied to every chat request.
+// num_ctx: 8192 keeps the KV cache small (vs the default 32k), which cuts
+//   time-to-first-token and memory use substantially with no quality loss
+//   for typical legal queries.
+// num_gpu: 99 pins all layers onto Metal/GPU on Apple Silicon.
+const INFERENCE_OPTIONS = {
+  num_ctx: 8192,
+  num_gpu: 99,
+} as const;
 
 export const SYSTEM_PROMPT = `You are Mizan, an AI legal assistant specializing in Saudi Arabian law. You are precise, structured, and authoritative.
 
@@ -48,14 +51,13 @@ export async function chat(messages: ChatMessage[], context?: string): Promise<s
     ? `${SYSTEM_PROMPT}\n\nRelevant legal context:\n${context}`
     : SYSTEM_PROMPT;
 
-  const response = await getAnthropic().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 4096,
-    system,
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+  const response = await getOllama().chat({
+    model: DEFAULT_MODEL,
+    messages: [{ role: "system", content: system }, ...messages],
+    options: INFERENCE_OPTIONS,
   });
 
-  return response.content[0].type === "text" ? response.content[0].text : "";
+  return response.message.content;
 }
 
 export async function* chatStream(
@@ -67,17 +69,16 @@ export async function* chatStream(
     systemPromptOverride ??
     (context ? `${SYSTEM_PROMPT}\n\nRelevant legal context:\n${context}` : SYSTEM_PROMPT);
 
-  const stream = getAnthropic().messages.stream({
-    model: CLAUDE_MODEL,
-    max_tokens: 4096,
-    system,
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+  const stream = await getOllama().chat({
+    model: DEFAULT_MODEL,
+    messages: [{ role: "system", content: system }, ...messages],
+    stream: true,
+    options: INFERENCE_OPTIONS,
   });
 
-  for await (const event of stream) {
-    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-      yield event.delta.text;
-    }
+  for await (const chunk of stream) {
+    const text = chunk.message?.content;
+    if (text) yield text;
   }
 }
 
@@ -86,31 +87,32 @@ export async function chatWithSystem(
   systemPrompt: string,
   userContent: string
 ): Promise<string> {
-  const response = await getAnthropic().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 8192,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userContent }],
+  const response = await getOllama().chat({
+    model: DEFAULT_MODEL,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ],
+    options: INFERENCE_OPTIONS,
   });
-
-  return response.content[0].type === "text" ? response.content[0].text : "";
+  return response.message.content;
 }
 
 export async function generateTitle(
   userMessage: string,
   assistantResponse: string
 ): Promise<string> {
-  const response = await getAnthropic().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 64,
+  const response = await getOllama().chat({
+    model: DEFAULT_MODEL,
     messages: [
       {
         role: "user",
         content: `Generate a concise 4-8 word title that captures the legal topic of this conversation. Return only the title, no punctuation at the end.\n\nUser asked: ${userMessage.slice(0, 300)}\n\nAssistant discussed: ${assistantResponse.slice(0, 300)}`,
       },
     ],
+    options: INFERENCE_OPTIONS,
   });
-  return (response.content[0].type === "text" ? response.content[0].text.trim() : "") || userMessage.slice(0, 60);
+  return response.message.content.trim() || userMessage.slice(0, 60);
 }
 
 export const ATTORNEY_SYSTEM_PROMPT = `You are Mizan, an advanced AI legal research assistant for licensed attorneys specializing in Saudi Arabian and GCC law. You assist qualified legal professionals with in-depth research, analysis, and drafting.
