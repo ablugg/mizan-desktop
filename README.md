@@ -27,7 +27,7 @@ Mizan is a free, open-source desktop application for licensed Saudi attorneys. A
 - AI inference runs at `127.0.0.1` via Ollama. No network request is made during inference.
 - SQLite database stored locally. No cloud database.
 - Vector store (LanceDB) stored locally. No external vector service.
-- Lockdown mode: auto-locks after 15 minutes of inactivity, requires email verification to resume.
+- Lockdown mode: auto-locks after 15 minutes of inactivity, requires PIN to resume.
 
 ---
 
