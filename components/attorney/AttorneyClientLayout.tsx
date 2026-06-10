@@ -6,6 +6,7 @@ import { ResearchProvider } from "@/contexts/ResearchContext";
 import { TaskNotificationBar } from "@/components/attorney/TaskNotificationBar";
 import { LockdownOverlay } from "@/components/attorney/LockdownOverlay";
 import { LockdownConfirm } from "@/components/attorney/LockdownConfirm";
+import { PinSetupModal } from "@/components/attorney/PinSetupModal";
 
 const WARN_MS = 5 * 60 * 1000;   // 5 min → show warning
 const LOCK_MS = 10 * 60 * 1000;  // 10 min → lock
@@ -127,6 +128,7 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
   const [showWarning, setShowWarning] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [needsPinSetup, setNeedsPinSetup] = useState(false);
   const warnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -151,6 +153,12 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
       setLockTrigger((localStorage.getItem("attorney-lock-trigger") as "MANUAL" | "AUTO") ?? "MANUAL");
     }
     setHydrated(true);
+
+    // Check if a PIN has been set yet
+    fetch("/api/attorney/unlock/password", { credentials: "include" })
+      .then(r => r.json())
+      .then((data: { pinSet: boolean }) => { if (!data.pinSet) setNeedsPinSetup(true); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -281,6 +289,11 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
       {/* Lockdown overlay */}
       {isLocked && (
         <LockdownOverlay trigger={lockTrigger} onUnlock={handleUnlock} isLight={isLight} />
+      )}
+
+      {/* First-time PIN setup */}
+      {needsPinSetup && !isLocked && (
+        <PinSetupModal onComplete={() => setNeedsPinSetup(false)} />
       )}
     </DocTaskProvider>
   );

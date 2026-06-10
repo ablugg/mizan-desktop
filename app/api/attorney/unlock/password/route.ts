@@ -3,6 +3,14 @@ import { db } from "@/lib/db";
 import { LOCAL_USER_ID } from "@/lib/local-auth";
 import bcrypt from "bcryptjs";
 
+export async function GET() {
+  const user = await db.user.findUnique({
+    where: { id: LOCAL_USER_ID },
+    select: { passwordHash: true },
+  });
+  return NextResponse.json({ pinSet: !!user?.passwordHash });
+}
+
 export async function POST(req: NextRequest) {
   const { password } = await req.json();
   if (!password) return NextResponse.json({ ok: false, error: "Password required" }, { status: 400 });
