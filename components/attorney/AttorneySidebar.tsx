@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe, LibraryBig } from "lucide-react";
+import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe, LibraryBig, Heart } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -274,6 +274,17 @@ export function AttorneySidebar() {
               >
                 <Globe size={13} />
               </button>
+              <a
+                href="https://github.com/sponsors/ablugg"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Support Mizan"
+                style={{ color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s", textDecoration: "none" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(224,112,112,0.7)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = tc.logoutColor; }}
+              >
+                <Heart size={13} />
+              </a>
               <button
                 title="Lock session"
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s" }}
@@ -336,6 +347,21 @@ export function AttorneySidebar() {
                   {locale === "ar" ? "ENGLISH" : "العربية"}
                 </span>
               </button>
+
+              {/* Donation */}
+              <a
+                href="https://github.com/sponsors/ablugg"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: "transparent", border: "1px solid transparent", cursor: "pointer", transition: "all 0.2s", marginTop: "6px", textDecoration: "none" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(224,112,112,0.2)"; (e.currentTarget as HTMLAnchorElement).style.background = "rgba(224,112,112,0.05)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "transparent"; (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
+              >
+                <Heart size={11} style={{ color: "rgba(224,112,112,0.5)", flexShrink: 0 }} />
+                <span style={{ fontSize: "9px", letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(224,112,112,0.45)", fontFamily: "var(--font-dm-sans)" }}>
+                  {locale === "ar" ? "ادعم ميزان" : "Support Mizan"}
+                </span>
+              </a>
             </>
           )}
         </div>
