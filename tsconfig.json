@@ -17,7 +17,8 @@
     "paths": {
     "@/*": ["./*"]
     },
-    "plugins": [{"name": "next"}]
+    "plugins": [{"name": "next"}],
+    "types": ["node", "react", "react-dom", "archiver", "bcryptjs", "unzipper"]
   },
   "include": [
     "next-env.d.ts",
