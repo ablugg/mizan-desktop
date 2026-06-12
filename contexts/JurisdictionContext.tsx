@@ -78,16 +78,20 @@ export function useJurisdiction() {
 }
 
 export function JurisdictionProvider({ children }: { children: React.ReactNode }) {
-  const [activeJurisdiction, setActiveState] = useState<Jurisdiction>("sa");
-  const [installedJurisdictions, setInstalled] = useState<Jurisdiction[]>(["sa"]);
+  // Read from localStorage synchronously to avoid flash of SA theme for UK users
+  const [activeJurisdiction, setActiveState] = useState<Jurisdiction>(() => {
+    if (typeof window === "undefined") return "sa";
+    return (localStorage.getItem("mizan-jurisdiction") as Jurisdiction) ?? "sa";
+  });
+  const [installedJurisdictions, setInstalled] = useState<Jurisdiction[]>(() => {
+    if (typeof window === "undefined") return ["sa"];
+    try {
+      const raw = localStorage.getItem("mizan-jurisdictions");
+      return raw ? (JSON.parse(raw) as Jurisdiction[]) : ["sa"];
+    } catch { return ["sa"]; }
+  });
 
   useEffect(() => {
-    const active = (localStorage.getItem("mizan-jurisdiction") as Jurisdiction) ?? "sa";
-    const raw = localStorage.getItem("mizan-jurisdictions");
-    const installed: Jurisdiction[] = raw ? (JSON.parse(raw) as Jurisdiction[]) : ["sa"];
-    setActiveState(active);
-    setInstalled(installed);
-
     function onJurisdictionChange(e: Event) {
       const j = (e as CustomEvent<{ jurisdiction: Jurisdiction }>).detail.jurisdiction;
       setActiveState(j);
