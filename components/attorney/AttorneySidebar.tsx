@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, FileSearch, FileText, Scissors, Menu, ChevronLeft, ChevronRight, Languages, BookOpen, CalendarClock, Sun, Moon, BarChart2, Lock, Globe, LibraryBig, Heart } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
+import { useJurisdiction } from "@/contexts/JurisdictionContext";
 import type { TranslationKey } from "@/lib/i18n";
 
 const TOOL_DEFS: { href: string; labelKey: TranslationKey; subKey: TranslationKey; icon: React.ElementType }[] = [
@@ -21,17 +22,33 @@ const TOOL_DEFS: { href: string; labelKey: TranslationKey; subKey: TranslationKe
 
 export function AttorneySidebar() {
   const { t, locale, setLocale } = useLocale();
+  const { jConfig, activeJurisdiction, installedJurisdictions, setActiveJurisdiction } = useJurisdiction();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [isLight, setIsLight] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ latest: string; releaseUrl: string } | null>(null);
   const displayName = "Attorney";
+
+  // Derived accent colours from active jurisdiction
+  const accentColor = isLight ? jConfig.lightAccent : jConfig.accent;
+  const accentRgb = isLight ? jConfig.lightAccentRgb : jConfig.accentRgb;
 
   useEffect(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
     if (stored === "true") setCollapsed(true);
     const storedLight = localStorage.getItem("attorney-light-mode");
     if (storedLight === "true") setIsLight(true);
+
+    // Check for updates once on mount (Electron only)
+    const electron = (window as unknown as { electron?: { app?: { checkUpdate?: () => Promise<{ hasUpdate: boolean; latest?: string; releaseUrl?: string }> } } }).electron;
+    if (electron?.app?.checkUpdate) {
+      electron.app.checkUpdate().then((res) => {
+        if (res.hasUpdate && res.latest && res.releaseUrl) {
+          setUpdateInfo({ latest: res.latest, releaseUrl: res.releaseUrl });
+        }
+      }).catch(() => {});
+    }
   }, []);
 
   function toggleCollapsed() {
@@ -48,13 +65,12 @@ export function AttorneySidebar() {
     const cx = Math.round(rect.left + rect.width / 2);
     const cy = Math.round(rect.top + rect.height / 2);
     const next = !isLight;
-    const newBg = next ? "#fafaf7" : "#060d1a";
 
     const el = document.createElement("div");
     el.style.position = "fixed";
     el.style.inset = "0";
     el.style.zIndex = "9998";
-    el.style.background = next ? "rgba(250,250,247,0.88)" : "rgba(6,13,26,0.88)";
+    el.style.background = next ? jConfig.lightOverlay : jConfig.darkOverlay;
     el.style.clipPath = `circle(0px at ${cx}px ${cy}px)`;
     el.style.willChange = "clip-path";
     el.style.pointerEvents = "none";
@@ -86,13 +102,13 @@ export function AttorneySidebar() {
 
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
-  // Theme colour tokens — swap between dark and light in one place
+  // Theme colour tokens — swap between dark and light, jurisdiction-aware
   const tc = isLight ? {
-    bg: "linear-gradient(180deg, #f5f0e8 0%, #ede7d8 60%, #e6deca 100%)",
-    glow: "rgba(180,140,50,0.10)",
-    brand: "#7a5c12",
-    tagline: "rgba(30,130,65,0.6)",
-    enclave: "rgba(30,130,65,0.7)",
+    bg: jConfig.lightSidebarBg,
+    glow: jConfig.lightSidebarGlow,
+    brand: jConfig.lightAccent,
+    tagline: `rgba(${jConfig.lightAccentRgb},0.6)`,
+    enclave: `rgba(${jConfig.lightAccentRgb},0.7)`,
     sectionLabel: "rgba(80,65,40,0.35)",
     navText: "rgba(45,35,20,0.88)",
     navSub: "rgba(70,58,38,0.6)",
@@ -101,18 +117,18 @@ export function AttorneySidebar() {
     navIconBorder: "rgba(0,0,0,0.1)",
     divider: "rgba(0,0,0,0.08)",
     footerName: "rgba(45,35,20,0.72)",
-    footerBadge: "rgba(30,130,65,0.65)",
+    footerBadge: `rgba(${jConfig.lightAccentRgb},0.65)`,
     logoutColor: "rgba(0,0,0,0.3)",
     toggleBorder: "rgba(26,58,122,0.35)",
     toggleColor: "#1a3a7a",
     themeLabel: "DARK MODE",
     themeLabelColor: "#1a3a7a",
   } : {
-    bg: "linear-gradient(180deg, #060d1a 0%, #08121f 60%, #050c18 100%)",
-    glow: "rgba(22,90,52,0.22)",
-    brand: "#e8c96d",
+    bg: jConfig.sidebarBg,
+    glow: jConfig.sidebarGlow,
+    brand: jConfig.accent,
     tagline: "#ffffff",
-    enclave: "rgba(74,197,110,0.65)",
+    enclave: `rgba(${jConfig.accentRgb},0.65)`,
     sectionLabel: "rgba(255,255,255,0.25)",
     navText: "#ffffff",
     navSub: "rgba(140,155,180,0.7)",
@@ -121,7 +137,7 @@ export function AttorneySidebar() {
     navIconBorder: "rgba(255,255,255,0.07)",
     divider: "rgba(255,255,255,0.06)",
     footerName: "rgba(220,225,235,0.6)",
-    footerBadge: "rgba(74,197,110,0.5)",
+    footerBadge: `rgba(${jConfig.accentRgb},0.5)`,
     logoutColor: "rgba(255,255,255,0.3)",
     toggleBorder: "rgba(255,255,255,0.2)",
     toggleColor: "#ffffff",
@@ -144,7 +160,7 @@ export function AttorneySidebar() {
                 onClick={toggleCollapsed}
                 title="Expand sidebar"
                 style={{ background: "transparent", border: `1px solid ${tc.toggleBorder}`, borderRadius: "6px", cursor: "pointer", color: tc.toggleColor, alignItems: "center", justifyContent: "center", width: "32px", height: "24px", transition: "all 0.15s", marginBottom: "6px" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.25)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = `rgba(${accentRgb},0.7)`; e.currentTarget.style.borderColor = `rgba(${accentRgb},0.25)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.toggleColor; e.currentTarget.style.borderColor = tc.toggleBorder; }}
               >
                 <ChevronRight size={12} />
@@ -225,19 +241,19 @@ export function AttorneySidebar() {
                     padding: collapsed ? "10px 0" : "12px 24px",
                     justifyContent: collapsed ? "center" : "flex-start",
                     cursor: "pointer",
-                    borderLeft: active && !collapsed ? "2px solid #c9a84c" : "2px solid transparent",
-                    background: active ? "rgba(201,168,76,0.05)" : "transparent",
+                    borderLeft: active && !collapsed ? `2px solid ${accentColor}` : "2px solid transparent",
+                    background: active ? `rgba(${accentRgb},0.05)` : "transparent",
                     transition: "all 0.2s",
                   }}
                   onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"; }}
                   onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
                 >
-                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: active ? "rgba(201,168,76,0.12)" : tc.navIconBg, border: active ? "1px solid rgba(201,168,76,0.25)" : `1px solid ${tc.navIconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
-                    <Icon size={14} style={{ color: active ? "#c9a84c" : tc.navIconColor, transition: "color 0.5s" }} />
+                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: active ? `rgba(${accentRgb},0.12)` : tc.navIconBg, border: active ? `1px solid rgba(${accentRgb},0.25)` : `1px solid ${tc.navIconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                    <Icon size={14} style={{ color: active ? accentColor : tc.navIconColor, transition: "color 0.5s" }} />
                   </div>
                   {!collapsed && (
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "14px", fontWeight: active ? 500 : 400, color: active ? "#c9a84c" : tc.navText, letterSpacing: "0.02em", lineHeight: 1.2, transition: "color 0.5s" }}>
+                      <div style={{ fontFamily: "var(--font-cormorant)", fontSize: "14px", fontWeight: active ? 500 : 400, color: active ? accentColor : tc.navText, letterSpacing: "0.02em", lineHeight: 1.2, transition: "color 0.5s" }}>
                         {t(labelKey)}
                       </div>
                       <div style={{ fontSize: "10px", color: tc.navSub, fontFamily: "var(--font-dm-sans)", marginTop: "2px", transition: "color 0.5s" }}>
@@ -260,7 +276,7 @@ export function AttorneySidebar() {
                 title={isLight ? "Switch to dark mode" : "Switch to light mode (BETA)"}
                 onClick={handleToggleTheme}
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = `rgba(${accentRgb},0.7)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.logoutColor; }}
               >
                 {isLight ? <Moon size={13} /> : <Sun size={13} />}
@@ -269,26 +285,29 @@ export function AttorneySidebar() {
                 title={locale === "ar" ? "Switch to English" : "Switch to Arabic"}
                 onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s", fontSize: "9px", fontFamily: "var(--font-dm-sans)", letterSpacing: "0.1em" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = `rgba(${accentRgb},0.7)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.logoutColor; }}
               >
                 <Globe size={13} />
               </button>
               <a
-                href="https://github.com/sponsors/ablugg"
+                href={updateInfo ? updateInfo.releaseUrl : "https://ko-fi.com/ablugg"}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Support Mizan"
-                style={{ color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s", textDecoration: "none" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "rgba(224,112,112,0.7)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = tc.logoutColor; }}
+                title={updateInfo ? `Update available: v${updateInfo.latest}` : "Support Mizan"}
+                style={{ color: updateInfo ? accentColor : tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s", textDecoration: "none", position: "relative" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = updateInfo ? `rgba(${accentRgb},0.7)` : "rgba(224,112,112,0.7)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = updateInfo ? accentColor : tc.logoutColor; }}
               >
                 <Heart size={13} />
+                {updateInfo && (
+                  <span style={{ position: "absolute", top: "-2px", right: "-2px", width: "5px", height: "5px", borderRadius: "50%", background: accentColor }} />
+                )}
               </a>
               <button
                 title="Lock session"
                 style={{ background: "transparent", border: "none", cursor: "pointer", color: tc.logoutColor, display: "flex", alignItems: "center", transition: "color 0.15s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "rgba(201,168,76,0.7)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = `rgba(${accentRgb},0.7)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = tc.logoutColor; }}
                 onClick={() => window.dispatchEvent(new CustomEvent("attorney-lock-request"))}
               >
@@ -323,7 +342,7 @@ export function AttorneySidebar() {
               <button
                 onClick={handleToggleTheme}
                 style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: "transparent", border: `1px solid ${tc.toggleBorder}`, cursor: "pointer", transition: "all 0.2s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.3)"; e.currentTarget.style.background = "rgba(201,168,76,0.06)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = `rgba(${accentRgb},0.3)`; e.currentTarget.style.background = `rgba(${accentRgb},0.06)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.toggleBorder; e.currentTarget.style.background = "transparent"; }}
               >
                 {isLight
@@ -339,7 +358,7 @@ export function AttorneySidebar() {
               <button
                 onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
                 style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: "transparent", border: `1px solid ${tc.toggleBorder}`, cursor: "pointer", transition: "all 0.2s", marginTop: "6px" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(201,168,76,0.3)"; e.currentTarget.style.background = "rgba(201,168,76,0.06)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = `rgba(${accentRgb},0.3)`; e.currentTarget.style.background = `rgba(${accentRgb},0.06)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = tc.toggleBorder; e.currentTarget.style.background = "transparent"; }}
               >
                 <Globe size={11} style={{ color: tc.toggleColor, flexShrink: 0 }} />
@@ -350,7 +369,7 @@ export function AttorneySidebar() {
 
               {/* Donation */}
               <a
-                href="https://github.com/sponsors/ablugg"
+                href="https://ko-fi.com/ablugg"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: "transparent", border: "1px solid transparent", cursor: "pointer", transition: "all 0.2s", marginTop: "6px", textDecoration: "none" }}
@@ -362,6 +381,59 @@ export function AttorneySidebar() {
                   {locale === "ar" ? "ادعم ميزان" : "Support Mizan"}
                 </span>
               </a>
+
+              {/* Update available */}
+              {updateInfo && (
+                <a
+                  href={updateInfo.releaseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: "7px", width: "100%", padding: "6px 8px", borderRadius: "7px", background: `rgba(${accentRgb},0.07)`, border: `1px solid rgba(${accentRgb},0.25)`, cursor: "pointer", transition: "all 0.2s", marginTop: "6px", textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = `rgba(${accentRgb},0.12)`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = `rgba(${accentRgb},0.07)`; }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M5.5 1v7M2.5 5l3-3 3 3" stroke={accentColor} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1.5 9.5h8" stroke={accentColor} strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: "9px", letterSpacing: "0.12em", textTransform: "uppercase", color: `rgba(${accentRgb},0.85)`, fontFamily: "var(--font-dm-sans)" }}>
+                    {locale === "ar" ? `تحديث ${updateInfo.latest}` : `Update v${updateInfo.latest}`}
+                  </span>
+                </a>
+              )}
+
+              {/* Jurisdiction switcher — only shown when multiple jurisdictions are installed */}
+              {installedJurisdictions.length > 1 && (
+                <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                  {installedJurisdictions.map((j) => {
+                    const jAccent = j === "uk" ? "#3e8f62" : "#c9a84c";
+                    const jRgb = j === "uk" ? "62,143,98" : "201,168,76";
+                    const jFlag = j === "uk" ? "🇬🇧" : "🇸🇦";
+                    const isActive = j === activeJurisdiction;
+                    return (
+                      <button
+                        key={j}
+                        onClick={() => setActiveJurisdiction(j)}
+                        title={j === "uk" ? "Switch to UK law" : "Switch to Saudi law"}
+                        style={{
+                          flex: 1, padding: "5px 4px", borderRadius: "7px", cursor: "pointer",
+                          border: isActive ? `1px solid rgba(${jRgb},0.4)` : `1px solid ${tc.toggleBorder}`,
+                          background: isActive ? `rgba(${jRgb},0.1)` : "transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.background = `rgba(${jRgb},0.06)`; e.currentTarget.style.borderColor = `rgba(${jRgb},0.2)`; } }}
+                        onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = tc.toggleBorder; } }}
+                      >
+                        <span style={{ fontSize: "11px", lineHeight: 1 }}>{jFlag}</span>
+                        <span style={{ fontSize: "8px", letterSpacing: "0.12em", textTransform: "uppercase", color: isActive ? jAccent : tc.logoutColor, fontFamily: "var(--font-dm-sans)", fontWeight: isActive ? 600 : 400 }}>
+                          {j.toUpperCase()}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
         </div>

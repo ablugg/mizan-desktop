@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Jurisdiction } from "@/contexts/JurisdictionContext";
 
 interface SetupStatus {
   dbReady: boolean;
@@ -50,14 +51,15 @@ function ModelCard({
   state,
   onDownload,
   isLight,
+  accent,
 }: {
   name: string;
   size: string;
   state: ModelState;
   onDownload: () => void;
   isLight: boolean;
+  accent: string;
 }) {
-  const gold = isLight ? "#7a5410" : "#c9a84c";
   const cardBg = isLight ? "rgba(238,233,222,0.92)" : "rgba(255,255,255,0.04)";
   const border = isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.07)";
   const textMain = isLight ? "rgba(28,34,52,0.92)" : "rgba(220,228,242,0.9)";
@@ -76,7 +78,6 @@ function ModelCard({
       flexDirection: "column",
       gap: "12px",
     }}>
-      {/* Header row */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
           <p style={{ margin: 0, fontFamily: "var(--font-dm-sans)", fontSize: "13px", fontWeight: 500, color: textMain, letterSpacing: "0.02em" }}>
@@ -87,7 +88,6 @@ function ModelCard({
           </p>
         </div>
 
-        {/* Status badge / button */}
         {state.status === "done" && (
           <div style={{
             display: "flex", alignItems: "center", gap: "6px",
@@ -109,8 +109,8 @@ function ModelCard({
             onClick={onDownload}
             style={{
               padding: "5px 14px", borderRadius: "6px",
-              border: `1px solid ${isLight ? "rgba(107,80,14,0.35)" : "rgba(201,168,76,0.3)"}`,
-              background: "transparent", color: gold,
+              border: `1px solid ${accent}40`,
+              background: "transparent", color: accent,
               fontFamily: "var(--font-dm-sans)", fontSize: "11px",
               cursor: "pointer", letterSpacing: "0.04em",
             }}
@@ -120,7 +120,7 @@ function ModelCard({
         )}
 
         {state.status === "pulling" && (
-          <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: gold, letterSpacing: "0.04em" }}>
+          <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "11px", color: accent, letterSpacing: "0.04em" }}>
             {pct > 0 ? `${pct.toFixed(1)}%` : "Starting..."}
           </span>
         )}
@@ -132,10 +132,9 @@ function ModelCard({
         )}
       </div>
 
-      {/* Progress */}
       {state.status === "pulling" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <ProgressBar pct={pct} color={gold} />
+          <ProgressBar pct={pct} color={accent} />
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "10px", color: textMuted }}>
               {state.currentStatus || "Connecting to Ollama..."}
@@ -172,11 +171,48 @@ function ModelCard({
   );
 }
 
+const J_CONFIG: Record<Jurisdiction, { accent: string; accentRgb: string; flag: string; label: string; systemName: string; pageBg: string }> = {
+  sa: { accent: "#c9a84c", accentRgb: "201,168,76", flag: "🇸🇦", label: "Saudi Arabia", systemName: "Saudi & GCC Law", pageBg: "#060d1a" },
+  uk: { accent: "#3e8f62", accentRgb: "62,143,98",  flag: "🇬🇧", label: "United Kingdom", systemName: "English & Welsh Law", pageBg: "#040c07" },
+};
+
 export default function SetupPage() {
   const router = useRouter();
+
+  // Determine initial step from localStorage synchronously to avoid flash
+  const [step, setStep] = useState<"pick" | "download">(() => {
+    if (typeof window === "undefined") return "pick";
+    if (localStorage.getItem("mizan-setup-done") === "1") return "download";
+    try {
+      const raw = localStorage.getItem("mizan-jurisdictions");
+      if (raw) {
+        const saved = JSON.parse(raw) as Jurisdiction[];
+        if (saved.length > 0) return "download";
+      }
+    } catch { /* */ }
+    return "pick";
+  });
+
+  const [selectedJurisdictions, setSelectedJurisdictions] = useState<Jurisdiction[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("mizan-jurisdictions");
+      return raw ? (JSON.parse(raw) as Jurisdiction[]) : [];
+    } catch { return []; }
+  });
+
   const [status, setStatus] = useState<SetupStatus | null>(null);
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(step === "download");
   const [isLight] = useState(false);
+
+  const activeJ: Jurisdiction = selectedJurisdictions[0] ?? "sa";
+  const jc = J_CONFIG[activeJ];
+  const bg = jc.pageBg;
+  const gold = jc.accent;
+  const textMain = "rgba(220,228,242,0.9)";
+  const textMuted = "rgba(140,160,190,0.7)";
+  const cardBg = "rgba(255,255,255,0.03)";
+  const border = "rgba(255,255,255,0.06)";
 
   const defaultModel = status?.defaultModel ?? "qwen2.5:7b";
   const embeddingModel = status?.embeddingModel ?? "nomic-embed-text";
@@ -195,14 +231,15 @@ export default function SetupPage() {
   const pullingMain = useRef(false);
   const pullingEmbed = useRef(false);
 
-  // On mount: run DB migrations then skip setup if already completed
   useEffect(() => {
     fetch("/api/setup/migrate", { method: "POST" }).catch(() => {});
     if (typeof window !== "undefined" && localStorage.getItem("mizan-setup-done") === "1") {
       router.replace("/attorney/research");
       return;
     }
-    check();
+    if (step === "download") {
+      check();
+    }
   }, []);
 
   async function check() {
@@ -271,9 +308,7 @@ export default function SetupPage() {
               error?: string;
             };
 
-            if (chunk.error) {
-              throw new Error(chunk.error);
-            }
+            if (chunk.error) throw new Error(chunk.error);
 
             setter(s => ({
               ...s,
@@ -285,7 +320,6 @@ export default function SetupPage() {
             if (chunk.status === "success") {
               setter(s => ({ ...s, status: "done" }));
               pullingRef.current = false;
-              // Re-check overall status after a model is done
               setTimeout(check, 500);
               return;
             }
@@ -307,13 +341,8 @@ export default function SetupPage() {
     }
   }
 
-  function downloadMainModel() {
-    pullModel(defaultModel, setMainModel, pullingMain);
-  }
-
-  function downloadEmbedModel() {
-    pullModel(embeddingModel, setEmbedModel, pullingEmbed);
-  }
+  function downloadMainModel() { pullModel(defaultModel, setMainModel, pullingMain); }
+  function downloadEmbedModel() { pullModel(embeddingModel, setEmbedModel, pullingEmbed); }
 
   async function downloadVectors() {
     if (vectorSync === "syncing") return;
@@ -340,13 +369,129 @@ export default function SetupPage() {
   const anyPulling = mainModel.status === "pulling" || embedModel.status === "pulling" || vectorSync === "syncing";
   const anyPending = mainModel.status !== "done" || embedModel.status !== "done" || vectorSync !== "done";
 
-  const bg = isLight ? "#fafaf7" : "#060d1a";
-  const gold = isLight ? "#7a5410" : "#c9a84c";
-  const textMain = isLight ? "rgba(28,34,52,0.92)" : "rgba(220,228,242,0.9)";
-  const textMuted = isLight ? "rgba(50,60,84,0.6)" : "rgba(140,160,190,0.7)";
-  const cardBg = isLight ? "rgba(238,233,222,0.92)" : "rgba(255,255,255,0.03)";
-  const border = isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.06)";
+  const lawPackLabel = selectedJurisdictions.includes("uk") && selectedJurisdictions.includes("sa")
+    ? "~14 MB  |  Saudi & GCC law + English & Welsh law"
+    : selectedJurisdictions.includes("uk")
+    ? "~7 MB  |  English & Welsh law statutes"
+    : "~7 MB  |  Saudi law statutes and regulations";
 
+  // ── Jurisdiction picker ────────────────────────────────────────────────────
+  if (step === "pick") {
+    return (
+      <div style={{
+        minHeight: "100vh", background: "#060d1a",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: "var(--font-dm-sans)", padding: "40px 20px",
+      }}>
+        <div style={{ width: "100%", maxWidth: "480px", display: "flex", flexDirection: "column", gap: "32px" }}>
+
+          {/* Logo */}
+          <div style={{ textAlign: "center" }}>
+            <h1 style={{ margin: 0, fontSize: "28px", fontFamily: "var(--font-cormorant)", fontWeight: 300, letterSpacing: "0.12em", color: "#c9a84c" }}>
+              MIZAN
+            </h1>
+            <p style={{ margin: "6px 0 0", fontSize: "11px", letterSpacing: "0.14em", color: "rgba(140,160,190,0.7)", textTransform: "uppercase" }}>
+              Legal Intelligence
+            </p>
+          </div>
+
+          {/* Card */}
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "16px", padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 500, color: "rgba(220,228,242,0.9)", letterSpacing: "0.02em" }}>
+                Select your jurisdiction
+              </h2>
+              <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(140,160,190,0.7)", lineHeight: "1.6" }}>
+                Choose the legal system you practise in. You can switch between jurisdictions inside the app at any time.
+              </p>
+            </div>
+
+            {/* Jurisdiction cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              {(["sa", "uk"] as Jurisdiction[]).map((j) => {
+                const selected = selectedJurisdictions.includes(j);
+                const cfg = J_CONFIG[j];
+                return (
+                  <div
+                    key={j}
+                    onClick={() => setSelectedJurisdictions(prev =>
+                      prev.includes(j) ? prev.filter(x => x !== j) : [...prev, j]
+                    )}
+                    style={{
+                      padding: "20px 16px", borderRadius: "12px", cursor: "pointer",
+                      border: selected ? `1px solid rgba(${cfg.accentRgb},0.5)` : "1px solid rgba(255,255,255,0.07)",
+                      background: selected ? `rgba(${cfg.accentRgb},0.07)` : "rgba(255,255,255,0.02)",
+                      transition: "all 0.2s",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: "10px",
+                      position: "relative",
+                    }}
+                  >
+                    {selected && (
+                      <div style={{
+                        position: "absolute", top: "8px", right: "8px",
+                        width: "16px", height: "16px", borderRadius: "50%",
+                        background: `rgba(${cfg.accentRgb},0.2)`,
+                        border: `1px solid rgba(${cfg.accentRgb},0.5)`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <path d="M1.5 4L3 5.5L6.5 2" stroke={cfg.accent} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )}
+                    <span style={{ fontSize: "32px", lineHeight: 1 }}>{cfg.flag}</span>
+                    <span style={{ fontFamily: "var(--font-dm-sans)", fontSize: "12px", fontWeight: 500, color: selected ? cfg.accent : "rgba(220,228,242,0.7)", textAlign: "center", transition: "color 0.2s" }}>
+                      {cfg.label}
+                    </span>
+                    <span style={{ fontSize: "9px", letterSpacing: "0.1em", textTransform: "uppercase", color: selected ? `rgba(${cfg.accentRgb},0.7)` : "rgba(140,160,190,0.4)", fontFamily: "var(--font-dm-sans)", textAlign: "center" }}>
+                      {cfg.systemName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Continue button */}
+            <button
+              disabled={selectedJurisdictions.length === 0}
+              onClick={() => {
+                if (selectedJurisdictions.length === 0) return;
+                localStorage.setItem("mizan-jurisdictions", JSON.stringify(selectedJurisdictions));
+                localStorage.setItem("mizan-jurisdiction", selectedJurisdictions[0]);
+                setStep("download");
+                setChecking(true);
+                check();
+              }}
+              style={{
+                width: "100%", padding: "11px", borderRadius: "8px",
+                border: "none",
+                background: selectedJurisdictions.length > 0
+                  ? J_CONFIG[selectedJurisdictions[0]].accent
+                  : "rgba(255,255,255,0.06)",
+                color: selectedJurisdictions.length > 0
+                  ? (selectedJurisdictions[0] === "uk" ? "#fff" : "#060d1a")
+                  : "rgba(255,255,255,0.25)",
+                fontFamily: "var(--font-dm-sans)", fontSize: "12px",
+                fontWeight: 500, letterSpacing: "0.06em",
+                cursor: selectedJurisdictions.length > 0 ? "pointer" : "not-allowed",
+                textTransform: "uppercase" as const,
+                transition: "all 0.2s",
+              }}
+            >
+              Continue
+            </button>
+          </div>
+
+          <p style={{ textAlign: "center", fontSize: "10px", color: "rgba(140,160,190,0.5)", margin: 0, letterSpacing: "0.04em" }}>
+            All processing is local. Nothing is sent to external servers.
+          </p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // ── Spinner (checking status after jurisdiction selected) ──────────────────
   if (checking) {
     return (
       <div style={{
@@ -355,7 +500,7 @@ export default function SetupPage() {
       }}>
         <div style={{
           width: "32px", height: "32px", borderRadius: "50%",
-          border: `2px solid rgba(201,168,76,0.15)`,
+          border: `2px solid ${gold}26`,
           borderTopColor: gold,
           animation: "spin 0.8s linear infinite",
         }} />
@@ -364,6 +509,7 @@ export default function SetupPage() {
     );
   }
 
+  // ── Download step ──────────────────────────────────────────────────────────
   return (
     <div style={{
       minHeight: "100vh", background: bg,
@@ -386,7 +532,7 @@ export default function SetupPage() {
             margin: "6px 0 0", fontSize: "11px", letterSpacing: "0.14em",
             color: textMuted, textTransform: "uppercase",
           }}>
-            Legal Intelligence
+            {jc.flag} {jc.systemName}
           </p>
         </div>
 
@@ -430,6 +576,7 @@ export default function SetupPage() {
             state={mainModel}
             onDownload={downloadMainModel}
             isLight={isLight}
+            accent={gold}
           />
           <ModelCard
             name={embeddingModel}
@@ -437,12 +584,13 @@ export default function SetupPage() {
             state={embedModel}
             onDownload={downloadEmbedModel}
             isLight={isLight}
+            accent={gold}
           />
 
           {/* Vector store */}
           <ModelCard
             name="Legal Knowledge Base"
-            size="~7 MB  |  Saudi law statutes and regulations"
+            size={lawPackLabel}
             state={{
               status: vectorSync === "syncing" ? "pulling" : vectorSync === "error" ? "error" : vectorSync === "done" ? "done" : "idle",
               label: "Legal Knowledge Base",
@@ -452,6 +600,7 @@ export default function SetupPage() {
             }}
             onDownload={downloadVectors}
             isLight={isLight}
+            accent={gold}
           />
 
           {/* Action buttons */}
@@ -462,8 +611,8 @@ export default function SetupPage() {
               style={{
                 width: "100%", padding: "11px",
                 borderRadius: "8px",
-                border: `1px solid ${isLight ? "rgba(107,80,14,0.35)" : "rgba(201,168,76,0.3)"}`,
-                background: isLight ? "rgba(201,168,76,0.08)" : "rgba(201,168,76,0.07)",
+                border: `1px solid ${gold}4d`,
+                background: `${gold}12`,
                 color: gold,
                 fontFamily: "var(--font-dm-sans)", fontSize: "12px",
                 fontWeight: 500, letterSpacing: "0.06em",
@@ -471,7 +620,7 @@ export default function SetupPage() {
                 textTransform: "uppercase" as const,
               }}
             >
-              Download All Models
+              Download All
             </button>
           )}
 
@@ -488,8 +637,8 @@ export default function SetupPage() {
                 width: "100%", padding: "11px",
                 borderRadius: "8px",
                 border: "none",
-                background: isLight ? "#7a5410" : "#c9a84c",
-                color: isLight ? "#fff" : "#060d1a",
+                background: gold,
+                color: activeJ === "uk" ? "#fff" : "#060d1a",
                 fontFamily: "var(--font-dm-sans)", fontSize: "12px",
                 fontWeight: 500, letterSpacing: "0.06em",
                 cursor: "pointer",
@@ -505,6 +654,7 @@ export default function SetupPage() {
           All processing is local. Nothing is sent to external servers.
         </p>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

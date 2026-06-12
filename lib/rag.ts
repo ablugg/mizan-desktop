@@ -10,22 +10,29 @@ async function getLanceDB() {
 const TABLE_NAME = "legal_chunks";
 const USER_TABLE_NAME = "user_chunks";
 
-let connectionCache: unknown = null;
+// Per-jurisdiction connection caches
+const connectionCaches: Record<string, unknown> = {};
 
-export function resetConnection() {
-  connectionCache = null;
+export function resetConnection(jurisdiction = "sa") {
+  delete connectionCaches[jurisdiction];
 }
 
-async function getConnection() {
-  if (connectionCache) return connectionCache as Awaited<ReturnType<(typeof import("@lancedb/lancedb"))["connect"]>>;
+function getDbPath(jurisdiction: string): string {
+  if (process.env.VECTOR_DB_PATH) return process.env.VECTOR_DB_PATH;
+  const suffix = jurisdiction === "uk" ? "-uk" : "";
+  return path.join(process.cwd(), `data/vector-store${suffix}`);
+}
+
+async function getConnection(jurisdiction = "sa") {
+  if (connectionCaches[jurisdiction]) {
+    return connectionCaches[jurisdiction] as Awaited<ReturnType<(typeof import("@lancedb/lancedb"))["connect"]>>;
+  }
 
   const lancedb = await getLanceDB();
-  const dbPath =
-    process.env.VECTOR_DB_PATH ??
-    path.join(process.cwd(), "data/vector-store");
+  const dbPath = getDbPath(jurisdiction);
 
-  connectionCache = await lancedb.connect(dbPath);
-  return connectionCache as Awaited<ReturnType<(typeof import("@lancedb/lancedb"))["connect"]>>;
+  connectionCaches[jurisdiction] = await lancedb.connect(dbPath);
+  return connectionCaches[jurisdiction] as Awaited<ReturnType<(typeof import("@lancedb/lancedb"))["connect"]>>;
 }
 
 async function embed(text: string): Promise<number[]> {
@@ -48,10 +55,11 @@ export interface LegalChunk {
 
 export async function retrieveContext(
   query: string,
-  topK = 3
+  topK = 3,
+  jurisdiction = "sa"
 ): Promise<string> {
   const queryEmbedding = await embed(query);
-  const db = await getConnection();
+  const db = await getConnection(jurisdiction);
 
   async function searchTable(tableName: string): Promise<LegalChunk[]> {
     try {
@@ -85,7 +93,8 @@ export async function addUserLaw(doc: {
 }): Promise<number> {
   const { chunkText } = await import("../data/ingestion/build-vectors");
   const lancedb = await getLanceDB();
-  const db = await getConnection();
+  const jurisdiction = doc.jurisdiction ?? "sa";
+  const db = await getConnection(jurisdiction);
 
   const chunks = chunkText(doc.text);
   if (chunks.length === 0) return 0;
@@ -110,11 +119,9 @@ export async function addUserLaw(doc: {
     await table.add(records);
   } catch {
     // Table doesn't exist yet -- create it
-    const freshDb = await lancedb.connect(
-      process.env.VECTOR_DB_PATH ?? path.join(process.cwd(), "data/vector-store")
-    );
+    const freshDb = await lancedb.connect(getDbPath(jurisdiction));
     await freshDb.createTable(USER_TABLE_NAME, records);
-    connectionCache = null; // force reconnect so cache points to same db
+    delete connectionCaches[jurisdiction]; // force reconnect so cache points to same db
   }
 
   return records.length;

@@ -7,6 +7,7 @@ import { TaskNotificationBar } from "@/components/attorney/TaskNotificationBar";
 import { LockdownOverlay } from "@/components/attorney/LockdownOverlay";
 import { LockdownConfirm } from "@/components/attorney/LockdownConfirm";
 import { PinSetupModal } from "@/components/attorney/PinSetupModal";
+import { JurisdictionProvider } from "@/contexts/JurisdictionContext";
 
 const WARN_MS = 5 * 60 * 1000;   // 5 min → show warning
 const LOCK_MS = 10 * 60 * 1000;  // 10 min → lock
@@ -154,11 +155,26 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
     }
     setHydrated(true);
 
-    // Check if a PIN has been set yet
-    fetch("/api/attorney/unlock/password", { credentials: "include" })
-      .then(r => r.json())
-      .then((data: { pinSet: boolean }) => { if (!data.pinSet) setNeedsPinSetup(true); })
-      .catch(() => {});
+    // Check if a PIN has been set yet — retry on failure (server may still be starting)
+    let attempts = 0;
+    function checkPin() {
+      fetch("/api/attorney/unlock/password", { credentials: "include" })
+        .then(r => r.json())
+        .then((data: { pinSet: boolean }) => {
+          if (!data.pinSet) {
+            // No PIN set — clear any persisted lock so the user isn't stuck
+            localStorage.removeItem("attorney-locked");
+            localStorage.removeItem("attorney-lock-trigger");
+            setIsLocked(false);
+            setNeedsPinSetup(true);
+          }
+        })
+        .catch(() => {
+          attempts++;
+          if (attempts < 5) setTimeout(checkPin, 1500);
+        });
+    }
+    checkPin();
   }, []);
 
   useEffect(() => {
@@ -172,6 +188,19 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
     const handler = (e: Event) => setIsLight((e as CustomEvent<{ light: boolean }>).detail.light);
     window.addEventListener("attorney-theme-change", handler);
     return () => window.removeEventListener("attorney-theme-change", handler);
+  }, []);
+
+  // Sync --mizan-page-bg CSS variable with active jurisdiction
+  useEffect(() => {
+    const PAGE_BG: Record<string, string> = { sa: "#060d1a", uk: "#040c07" };
+    function applyPageBg(j: string) {
+      document.documentElement.style.setProperty("--mizan-page-bg", PAGE_BG[j] ?? PAGE_BG.sa);
+    }
+    const j = localStorage.getItem("mizan-jurisdiction") ?? "sa";
+    applyPageBg(j);
+    const handler = (e: Event) => applyPageBg((e as CustomEvent<{ jurisdiction: string }>).detail.jurisdiction);
+    window.addEventListener("mizan-jurisdiction-change", handler);
+    return () => window.removeEventListener("mizan-jurisdiction-change", handler);
   }, []);
 
   useEffect(() => {
@@ -188,6 +217,7 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
   }, [isLight]);
 
   const triggerLock = useCallback((trigger: "MANUAL" | "AUTO") => {
+    if (needsPinSetup) return; // can't lock without a PIN
     if (warnTimer.current) clearTimeout(warnTimer.current);
     if (lockTimer.current) clearTimeout(lockTimer.current);
     setShowWarning(false);
@@ -201,16 +231,16 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
       body: JSON.stringify({ type: "LOCKED", trigger }),
       credentials: "include",
     }).catch(() => {});
-  }, []);
+  }, [needsPinSetup]);
 
   const resetTimers = useCallback(() => {
-    if (isLocked) return;
+    if (isLocked || needsPinSetup) return;
     if (warnTimer.current) clearTimeout(warnTimer.current);
     if (lockTimer.current) clearTimeout(lockTimer.current);
     setShowWarning(false);
     warnTimer.current = setTimeout(() => setShowWarning(true), WARN_MS);
     lockTimer.current = setTimeout(() => triggerLock("AUTO"), LOCK_MS);
-  }, [isLocked, triggerLock]);
+  }, [isLocked, needsPinSetup, triggerLock]);
 
   // Inactivity detection
   useEffect(() => {
@@ -245,6 +275,7 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
   const warnText = isLight ? "rgba(50,60,84,0.8)" : "rgba(180,195,220,0.7)";
 
   return (
+    <JurisdictionProvider>
     <DocTaskProvider>
     <ResearchProvider>
       {children}
@@ -286,15 +317,16 @@ export function AttorneyClientLayout({ children }: { children: React.ReactNode }
         />
       )}
 
-      {/* Lockdown overlay */}
-      {isLocked && (
+      {/* Lockdown overlay — only when PIN exists */}
+      {isLocked && !needsPinSetup && (
         <LockdownOverlay trigger={lockTrigger} onUnlock={handleUnlock} isLight={isLight} />
       )}
 
-      {/* First-time PIN setup */}
-      {needsPinSetup && !isLocked && (
+      {/* First-time PIN setup — shown whenever needed, even if app was somehow locked */}
+      {needsPinSetup && (
         <PinSetupModal onComplete={() => setNeedsPinSetup(false)} />
       )}
     </DocTaskProvider>
+    </JurisdictionProvider>
   );
 }

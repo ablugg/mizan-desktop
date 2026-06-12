@@ -5,7 +5,7 @@ import { PageTransitionWrapper } from "@/components/attorney/PageTransitionWrapp
 export default function AttorneyLayout({ children }: { children: React.ReactNode }) {
   return (
     <AttorneyClientLayout>
-      <div className="flex min-h-[100dvh] md:fixed md:inset-0 md:min-h-0" style={{ background: "#060d1a" }}>
+      <div className="flex min-h-[100dvh] md:fixed md:inset-0 md:min-h-0" style={{ background: "var(--mizan-page-bg, #060d1a)" }}>
         <AttorneySidebar />
         <PageTransitionWrapper>
           {children}
