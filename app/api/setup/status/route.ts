@@ -43,14 +43,19 @@ export async function GET() {
 
     let vectorsReady = false;
     try {
-      const lancedb = await import("@lancedb/lancedb");
-      const path = await import("path");
-      const dbPath = process.env.VECTOR_DB_PATH ?? path.join(process.cwd(), "data/vector-store");
-      const vdb = await lancedb.connect(dbPath);
-      const tables = await vdb.tableNames();
-      vectorsReady = tables.includes("legal_chunks");
+      await Promise.race([
+        (async () => {
+          const lancedb = await import("@lancedb/lancedb");
+          const path = await import("path");
+          const dbPath = process.env.VECTOR_DB_PATH ?? path.join(process.cwd(), "data/vector-store");
+          const vdb = await lancedb.connect(dbPath);
+          const tables = await vdb.tableNames();
+          vectorsReady = tables.includes("legal_chunks");
+        })(),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("lancedb timeout")), 5000)),
+      ]);
     } catch {
-      // Vector store not built yet
+      // Vector store not ready or timed out
     }
 
     return NextResponse.json({

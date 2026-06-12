@@ -178,7 +178,7 @@ export default function SetupPage() {
   const [checking, setChecking] = useState(true);
   const [isLight] = useState(false);
 
-  const defaultModel = status?.defaultModel ?? "qwen2.5:14b";
+  const defaultModel = status?.defaultModel ?? "qwen2.5:7b";
   const embeddingModel = status?.embeddingModel ?? "nomic-embed-text";
 
   const [mainModel, setMainModel] = useState<ModelState>({
@@ -189,26 +189,35 @@ export default function SetupPage() {
     status: "idle", label: embeddingModel,
     total: 0, completed: 0, currentStatus: "",
   });
+  const [vectorSync, setVectorSync] = useState<"idle" | "syncing" | "done" | "error">("idle");
+  const [vectorError, setVectorError] = useState("");
 
   const pullingMain = useRef(false);
   const pullingEmbed = useRef(false);
 
-  // On mount: check setup status
+  // On mount: run DB migrations then skip setup if already completed
   useEffect(() => {
+    fetch("/api/setup/migrate", { method: "POST" }).catch(() => {});
+    if (typeof window !== "undefined" && localStorage.getItem("mizan-setup-done") === "1") {
+      router.replace("/attorney/research");
+      return;
+    }
     check();
   }, []);
 
   async function check() {
     setChecking(true);
     try {
-      const res = await fetch("/api/setup/status");
+      const res = await fetch("/api/setup/status", { signal: AbortSignal.timeout(12000) });
       const data: SetupStatus = await res.json();
       setStatus(data);
 
       if (data.modelReady) setMainModel(s => ({ ...s, status: "done" }));
       if (data.embeddingReady) setEmbedModel(s => ({ ...s, status: "done" }));
+      if (data.vectorsReady) setVectorSync("done");
 
       if (data.dbReady && data.modelReady && data.embeddingReady) {
+        localStorage.setItem("mizan-setup-done", "1");
         router.replace("/attorney/research");
         return;
       }
@@ -306,14 +315,30 @@ export default function SetupPage() {
     pullModel(embeddingModel, setEmbedModel, pullingEmbed);
   }
 
+  async function downloadVectors() {
+    if (vectorSync === "syncing") return;
+    setVectorSync("syncing");
+    setVectorError("");
+    try {
+      const res = await fetch("/api/attorney/laws/sync", { method: "POST", credentials: "include" });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? "Download failed");
+      setVectorSync("done");
+    } catch (err) {
+      setVectorSync("error");
+      setVectorError(err instanceof Error ? err.message : "Download failed");
+    }
+  }
+
   function downloadAll() {
     if (mainModel.status === "idle" || mainModel.status === "error") downloadMainModel();
     if (embedModel.status === "idle" || embedModel.status === "error") downloadEmbedModel();
+    if (vectorSync === "idle" || vectorSync === "error") downloadVectors();
   }
 
-  const allReady = mainModel.status === "done" && embedModel.status === "done";
-  const anyPulling = mainModel.status === "pulling" || embedModel.status === "pulling";
-  const anyPending = mainModel.status !== "done" || embedModel.status !== "done";
+  const allReady = mainModel.status === "done" && embedModel.status === "done" && vectorSync === "done";
+  const anyPulling = mainModel.status === "pulling" || embedModel.status === "pulling" || vectorSync === "syncing";
+  const anyPending = mainModel.status !== "done" || embedModel.status !== "done" || vectorSync !== "done";
 
   const bg = isLight ? "#fafaf7" : "#060d1a";
   const gold = isLight ? "#7a5410" : "#c9a84c";
@@ -414,28 +439,20 @@ export default function SetupPage() {
             isLight={isLight}
           />
 
-          {/* Vector store status */}
-          {!status?.vectorsReady && (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{
-                width: "8px", height: "8px", borderRadius: "50%",
-                background: "rgba(201,168,76,0.5)",
-                flexShrink: 0,
-              }} />
-              <span style={{ fontSize: "12px", color: textMuted }}>
-                Legal knowledge base not found. Run{" "}
-                <code style={{
-                  fontFamily: "monospace", fontSize: "11px",
-                  background: "rgba(255,255,255,0.06)",
-                  padding: "1px 5px", borderRadius: "3px",
-                  color: gold,
-                }}>
-                  npm run build:vectors
-                </code>
-                {" "}to build it.
-              </span>
-            </div>
-          )}
+          {/* Vector store */}
+          <ModelCard
+            name="Legal Knowledge Base"
+            size="~7 MB  |  Saudi law statutes and regulations"
+            state={{
+              status: vectorSync === "syncing" ? "pulling" : vectorSync === "error" ? "error" : vectorSync === "done" ? "done" : "idle",
+              label: "Legal Knowledge Base",
+              total: 0, completed: 0,
+              currentStatus: vectorSync === "syncing" ? "Downloading..." : "",
+              error: vectorError || undefined,
+            }}
+            onDownload={downloadVectors}
+            isLight={isLight}
+          />
 
           {/* Action buttons */}
           {anyPending && !anyPulling && (
@@ -466,7 +483,7 @@ export default function SetupPage() {
 
           {allReady && (
             <button
-              onClick={() => router.replace("/attorney/research")}
+              onClick={() => { localStorage.setItem("mizan-setup-done", "1"); router.replace("/attorney/research"); }}
               style={{
                 width: "100%", padding: "11px",
                 borderRadius: "8px",
