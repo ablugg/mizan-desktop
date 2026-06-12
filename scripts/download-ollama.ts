@@ -4,20 +4,23 @@
  */
 import fs from "fs";
 import path from "path";
+import os from "os";
 import https from "https";
 import { createWriteStream } from "fs";
 import { execSync } from "child_process";
 
 const OLLAMA_VERSION = "0.30.7";
 
+const tmp = os.tmpdir();
+
 const ARCHIVES = [
   {
     url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-darwin.tgz`,
-    archive: "/tmp/ollama-darwin.tgz",
+    archive: path.join(tmp, "ollama-darwin.tgz"),
     dest: "resources/ollama/mac/ollama",
+    checkExists: (dest: string) => fs.existsSync(dest),
     extract: (archive: string, destDir: string) => {
       execSync(`tar -xzf "${archive}" -C "${destDir}"`);
-      // Binary is named 'ollama' inside the tarball
       const bin = path.join(destDir, "ollama");
       if (!fs.existsSync(bin)) throw new Error(`ollama binary not found in tarball at ${bin}`);
     },
@@ -25,10 +28,26 @@ const ARCHIVES = [
   },
   {
     url: `https://github.com/ollama/ollama/releases/download/v${OLLAMA_VERSION}/ollama-windows-amd64.zip`,
-    archive: "/tmp/ollama-windows.zip",
+    archive: path.join(tmp, "ollama-windows.zip"),
+    // dest points to the exe but we check the lib dir to detect full extract
     dest: "resources/ollama/win/ollama.exe",
+    checkExists: (_dest: string) =>
+      fs.existsSync("resources/ollama/win/ollama.exe") &&
+      fs.existsSync("resources/ollama/win/lib/ollama/llama-server.exe"),
     extract: (archive: string, destDir: string) => {
-      execSync(`unzip -o "${archive}" ollama.exe -d "${destDir}"`);
+      // Extract the full zip — Ollama needs llama-server.exe and the lib/ollama/ DLLs
+      // alongside ollama.exe to run inference.
+      if (process.platform === "win32") {
+        execSync(`powershell -Command "Expand-Archive -Force '${archive}' '${destDir}'"`, { stdio: "inherit" });
+      } else {
+        execSync(`unzip -o "${archive}" -d "${destDir}"`, { stdio: "inherit" });
+      }
+      if (!fs.existsSync(path.join(destDir, "ollama.exe"))) {
+        throw new Error(`ollama.exe not found after extraction in ${destDir}`);
+      }
+      if (!fs.existsSync(path.join(destDir, "lib", "ollama", "llama-server.exe"))) {
+        throw new Error(`llama-server.exe not found after extraction — zip structure may have changed`);
+      }
     },
     platform: "Windows",
   },
@@ -72,8 +91,8 @@ function download(url: string, dest: string): Promise<void> {
 }
 
 async function main() {
-  for (const { url, archive, dest, extract, platform } of ARCHIVES) {
-    if (fs.existsSync(dest)) {
+  for (const { url, archive, dest, checkExists, extract, platform } of ARCHIVES) {
+    if (checkExists(dest)) {
       console.log(`[skip] ${platform} binary already exists at ${dest}`);
       continue;
     }
